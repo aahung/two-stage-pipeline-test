@@ -1,0 +1,133 @@
+name: 2-Stage Pipeline
+
+on: [pull_request, push]
+
+env:
+  # aws-cli v2 requires a default region https://github.com/aws/aws-cli/issues/5262
+  AWS_DEFAULT_REGION: us-east-2
+  aws_access_key_id_: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  aws_secret_access_key_: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  cfn_template: template.yaml
+  # below is the workaround to pass stage resources
+  testing_region: us-east-2
+  testing_deployer_role: arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP
+  testing_artifacts_bucket: stage-resource-stack-artifactsbucket-1t96af9pkc631
+  testing_cfn_deployment_role: arn:aws:iam::191762412092:role/stage-resource-stack-CFNDeploymentRole-1LHD5N7FSUGB6
+  testing_stack_name: test-stack
+  prod_region: us-east-2
+  prod_deployer_role: arn:aws:iam::013714286599:role/stack-resource-stack-DeployerRole-1MKUWNLR7G6I9
+  prod_artifacts_bucket: stack-resource-stack-artifactsbucket-1tecc3mhymec7
+  prod_cfn_deployment_role: arn:aws:iam::013714286599:role/stack-resource-stack-CFNDeploymentRole-1UHQLSY8D9LY1
+  prod_stack_name: prod-stack
+
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          # lint command here
+  
+  unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          # unit test command here
+  
+  build-and-deploy-feature:
+    if: startsWith(github.ref, 'refs/heads/feature')
+    needs: [linting, unit-test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          . ./assume-role.sh ${testing_region} ${testing_deployer_role} testing-packaging 
+          sam build --template ${cfn_template} --use-container
+          sam deploy --stack-name features-${CI_COMMIT_REF_NAME}-cfn-stack \
+            --capabilities CAPABILITY_IAM \
+            --region ${testing_region} \
+            --s3-bucket ${testing_artifacts_bucket} \
+            --no-fail-on-empty-changeset \
+            --role-arn ${testing_cfn_deployment_role}
+  
+  build:
+    if: github.ref == 'refs/heads/main'
+    needs: [linting, unit-test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build resources
+        run: sam build --template ${cfn_template} --use-container
+      - name: Upload artifacts to testing artifact buckets
+        run: |
+          . ./assume-role.sh ${testing_region} ${testing_deployer_role} testing-packaging 
+          sam package \
+            --s3-bucket ${testing_artifacts_bucket} \
+            --region ${testing_region} \
+            --output-template-file packaged-testing.yaml
+      - name: Upload artifacts to production artifact buckets
+        run: |
+          . ./assume-role.sh ${prod_region} ${prod_deployer_role} prod-packaging 
+          sam package \
+            --s3-bucket ${prod_artifacts_bucket} \
+            --region ${prod_region} \
+            --output-template-file packaged-prod.yaml
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: packaged-testing.yaml
+          path: packaged-testing.yaml
+      - uses: actions/upload-artifact@v2
+        with:
+          name: packaged-prod.yaml
+          path: packaged-prod.yaml
+    
+  deploy-testing:
+    if: github.ref == 'refs/heads/main'
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: packaged-testing.yaml
+      - name: Deploy to testing account
+        run: |
+          . ./assume-role.sh ${testing_region} ${testing_deployer_role} testing-deployment 
+          sam deploy --stack-name ${testing_stack_name} \
+            --template packaged-testing.yaml \
+            --capabilities CAPABILITY_IAM \
+            --region ${testing_region} \
+            --s3-bucket ${testing_artifacts_bucket} \
+            --no-fail-on-empty-changeset \
+            --role-arn ${testing_cfn_deployment_role}
+  
+  integration-test:
+    if: github.ref == 'refs/heads/main'
+    needs: [deploy-testing]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          # trigger the integration tests here
+  
+  deploy-prod:
+    if: github.ref == 'refs/heads/main'
+    needs: [integration-test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: packaged-prod.yaml
+      - name: Deploy to production account
+        run: |
+          . ./assume-role.sh ${prod_region} ${prod_deployer_role} prod-deployment 
+          sam deploy --stack-name ${prod_stack_name} \
+            --template packaged-prod.yaml \
+            --capabilities CAPABILITY_IAM \
+            --region ${prod_region} \
+            --s3-bucket ${prod_artifacts_bucket} \
+            --no-fail-on-empty-changeset \
+            --role-arn ${prod_cfn_deployment_role}

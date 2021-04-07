@@ -1,0 +1,1 @@
+jq -r 'to_entries[] | "\(.key)=\(.value)"' cicd/env-vars.json >> $GITHUB_ENV

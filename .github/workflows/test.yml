@@ -9,15 +9,7 @@ env:
   aws_secret_access_key_: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   cfn_template: template.yaml
   # below is the workaround to pass stage resources
-  testing_region: us-east-2
-  testing_deployer_role: arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP
-  testing_artifacts_bucket: stage-resource-stack-artifactsbucket-1t96af9pkc631
-  testing_cfn_deployment_role: arn:aws:iam::191762412092:role/stage-resource-stack-CFNDeploymentRole-1LHD5N7FSUGB6
   testing_stack_name: test-stack
-  prod_region: us-east-2
-  prod_deployer_role: arn:aws:iam::013714286599:role/stack-resource-stack-DeployerRole-1MKUWNLR7G6I9
-  prod_artifacts_bucket: stack-resource-stack-artifactsbucket-1tecc3mhymec7
-  prod_cfn_deployment_role: arn:aws:iam::013714286599:role/stack-resource-stack-CFNDeploymentRole-1UHQLSY8D9LY1
   prod_stack_name: prod-stack
 
 jobs:
@@ -41,6 +33,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Load env-vars.json
+        run: cicd/init-env-vars-github-action.sh
       - run: |
           . ./assume-role.sh ${testing_region} ${testing_deployer_role} testing-packaging 
           sam build --template ${cfn_template} --use-container
@@ -57,10 +51,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Load env-vars.json
+        run: cicd/init-env-vars-github-action.sh
       - name: Build resources
         run: sam build --template ${cfn_template} --use-container
       - name: Upload artifacts to testing artifact buckets
         run: |
+          echo ${testing_region} ${testing_deployer_role}
           . ./assume-role.sh ${testing_region} ${testing_deployer_role} testing-packaging 
           sam package \
             --s3-bucket ${testing_artifacts_bucket} \
@@ -89,6 +86,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Load env-vars.json
+        run: cicd/init-env-vars-github-action.sh
       - uses: actions/download-artifact@v2
         with:
           name: packaged-testing.yaml
@@ -109,6 +108,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Load env-vars.json
+        run: cicd/init-env-vars-github-action.sh
       - run: |
           # trigger the integration tests here
   
@@ -118,6 +119,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Load env-vars.json
+        run: cicd/init-env-vars-github-action.sh
       - uses: actions/download-artifact@v2
         with:
           name: packaged-prod.yaml

@@ -9,3 +9,17 @@ Resources:
       Runtime: python3.8
       CodeUri: src
       Timeout: 600
+
+  ImageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      ImageConfig:
+        Command:
+          - main.handler
+    Metadata:
+      DockerTag: function
+      DockerContext: ./PythonImage
+      Dockerfile: Dockerfile
+      DockerBuildArgs:
+        BASE_RUNTIME: '3.8'

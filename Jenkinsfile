@@ -51,7 +51,7 @@ pipeline {
         // Add assume role script in future
         sh '''
           . cicd/init-env-vars.sh
-          sam build --template ${sam_template} --use-container
+          sam build --template ${sam_template}
 
           . ./assume-role.sh ${testing_region} ${testing_deployer_role} testing-packaging 
           sam package \

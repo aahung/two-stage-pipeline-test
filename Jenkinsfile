@@ -5,8 +5,9 @@ pipeline {
     }
   }
   environment {
-    aws_access_key_id_ = "${env.AWS_ACCESS_KEY_ID}"
-    aws_secret_access_key_ = "${env.AWS_SECRET_ACCESS_KEY}"
+    aws_access = credentials('test')
+    aws_access_key_id_ = "$aws_access_USR"
+    aws_secret_access_key_ = "$aws_access_PSW"
     sam_template = "template.yaml"
     testing_stack_name = "test-stack"
     prod_stack_name = "prod-stack"

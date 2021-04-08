@@ -3,8 +3,6 @@ name: 2-Stage Pipeline
 on: [pull_request, push]
 
 env:
-  # aws-cli v2 requires a default region https://github.com/aws/aws-cli/issues/5262
-  AWS_DEFAULT_REGION: us-east-2
   aws_access_key_id_: ${{ secrets.AWS_ACCESS_KEY_ID }}
   aws_secret_access_key_: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   cfn_template: template.yaml
@@ -42,6 +40,7 @@ jobs:
             --capabilities CAPABILITY_IAM \
             --region ${testing_region} \
             --s3-bucket ${testing_artifacts_bucket} \
+            --image-repository ${testing_ecr_repo} \
             --no-fail-on-empty-changeset \
             --role-arn ${testing_cfn_deployment_role}
   
@@ -61,6 +60,7 @@ jobs:
           . ./assume-role.sh ${testing_region} ${testing_deployer_role} testing-packaging 
           sam package \
             --s3-bucket ${testing_artifacts_bucket} \
+            --image-repository ${testing_ecr_repo} \
             --region ${testing_region} \
             --output-template-file packaged-testing.yaml
       - name: Upload artifacts to production artifact buckets
@@ -68,6 +68,7 @@ jobs:
           . ./assume-role.sh ${prod_region} ${prod_deployer_role} prod-packaging 
           sam package \
             --s3-bucket ${prod_artifacts_bucket} \
+            --image-repository ${prod_ecr_repo} \
             --region ${prod_region} \
             --output-template-file packaged-prod.yaml
 
@@ -99,6 +100,7 @@ jobs:
             --capabilities CAPABILITY_IAM \
             --region ${testing_region} \
             --s3-bucket ${testing_artifacts_bucket} \
+            --image-repository ${testing_ecr_repo} \
             --no-fail-on-empty-changeset \
             --role-arn ${testing_cfn_deployment_role}
   
@@ -132,5 +134,6 @@ jobs:
             --capabilities CAPABILITY_IAM \
             --region ${prod_region} \
             --s3-bucket ${prod_artifacts_bucket} \
+            --image-repository ${prod_ecr_repo} \
             --no-fail-on-empty-changeset \
             --role-arn ${prod_cfn_deployment_role}

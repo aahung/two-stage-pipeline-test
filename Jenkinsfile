@@ -57,7 +57,7 @@ pipeline {
         branch 'main'
       }
       steps {
-        sh 'sam build --template ${sam_template}'
+        sh 'sam build --template ${sam_template} --use-container'
         sh '''
           . cicd/assume-role.sh ${testing_region} ${testing_deployer_role} testing-packaging 
           sam package \

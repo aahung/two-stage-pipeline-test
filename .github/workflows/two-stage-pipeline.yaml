@@ -1,42 +1,48 @@
-name: 2-Stage Pipeline
+name: Pipeline
 
-on: [pull_request, push]
+on: [push]
 
 env:
   aws_access_key_id_: ${{ secrets.AWS_ACCESS_KEY_ID }}
   aws_secret_access_key_: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  cfn_template: template.yaml
-  # below is the workaround to pass stage resources
+  sam_template: template.yaml
   testing_stack_name: test-stack
+  testing_deployer_role: arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP
+  testing_cfn_deployment_role: arn:aws:iam::191762412092:role/stage-resource-stack-CFNDeploymentRole-1LHD5N7FSUGB6
+  testing_artifacts_bucket: stage-resource-stack-artifactsbucket-1t96af9pkc631
+  testing_ecr_repo: 191762412092.dkr.ecr.us-east-2.amazonaws.com/test
+  testing_region: us-east-2
   prod_stack_name: prod-stack
+  prod_deployer_role: arn:aws:iam::013714286599:role/stack-resource-stack-DeployerRole-1MKUWNLR7G6I9
+  prod_cfn_deployment_role: arn:aws:iam::013714286599:role/stack-resource-stack-CFNDeploymentRole-1UHQLSY8D9LY1
+  prod_artifacts_bucket: stack-resource-stack-artifactsbucket-1tecc3mhymec7
+  prod_ecr_repo: 013714286599.dkr.ecr.us-east-2.amazonaws.com/test
+  prod_region: us-east-2
 
 jobs:
-  linting:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - run: |
-          # lint command here
-  
-  unit-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - run: |
-          # unit test command here
+          # uncomment and modify the following step for running the unit-tests
+          # Assuming python runtime
+          # pip install pytest
+          # pip install -r /path/to/requirements.txt
+          # python -m pytest /path/to/unit-tests
   
   build-and-deploy-feature:
     if: startsWith(github.ref, 'refs/heads/feature')
-    needs: [linting, unit-test]
+    needs: [test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Load env-vars.json
-        run: cicd/init-env-vars-github-action.sh
       - run: |
-          . ./assume-role.sh ${testing_region} ${testing_deployer_role} testing-packaging 
-          sam build --template ${cfn_template} --use-container
-          sam deploy --stack-name features-${CI_COMMIT_REF_NAME}-cfn-stack \
+          . .github/workflows/assume-role.sh ${testing_region}\
+                                             ${testing_deployer_role}\
+                                             feature-deployment
+          sam build --template ${sam_template} --use-container
+          sam deploy --stack-name features-${GITHUB_REF##*/}-cfn-stack \
             --capabilities CAPABILITY_IAM \
             --region ${testing_region} \
             --s3-bucket ${testing_artifacts_bucket} \
@@ -46,18 +52,17 @@ jobs:
   
   build:
     if: github.ref == 'refs/heads/main'
-    needs: [linting, unit-test]
+    needs: [test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Load env-vars.json
-        run: cicd/init-env-vars-github-action.sh
       - name: Build resources
-        run: sam build --template ${cfn_template} --use-container
+        run: sam build --template ${sam_template} --use-container
       - name: Upload artifacts to testing artifact buckets
         run: |
-          echo ${testing_region} ${testing_deployer_role}
-          . ./assume-role.sh ${testing_region} ${testing_deployer_role} testing-packaging 
+          . .github/workflows/assume-role.sh ${testing_region} \
+                                             ${testing_deployer_role} \
+                                             prod-stage-packaging
           sam package \
             --s3-bucket ${testing_artifacts_bucket} \
             --image-repository ${testing_ecr_repo} \
@@ -65,21 +70,25 @@ jobs:
             --output-template-file packaged-testing.yaml
       - name: Upload artifacts to production artifact buckets
         run: |
-          . ./assume-role.sh ${prod_region} ${prod_deployer_role} prod-packaging 
+          . .github/workflows/assume-role.sh ${prod_region} \
+                                             ${prod_deployer_role} \
+                                             prod-stage-packaging
           sam package \
             --s3-bucket ${prod_artifacts_bucket} \
-            --image-repository ${prod_ecr_repo} \
             --region ${prod_region} \
+            --image-repository ${prod_ecr_repo} \
             --output-template-file packaged-prod.yaml
 
       - uses: actions/upload-artifact@v2
         with:
           name: packaged-testing.yaml
           path: packaged-testing.yaml
+          retention-days: 365
       - uses: actions/upload-artifact@v2
         with:
           name: packaged-prod.yaml
           path: packaged-prod.yaml
+          retention-days: 365
     
   deploy-testing:
     if: github.ref == 'refs/heads/main'
@@ -87,14 +96,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Load env-vars.json
-        run: cicd/init-env-vars-github-action.sh
       - uses: actions/download-artifact@v2
         with:
           name: packaged-testing.yaml
       - name: Deploy to testing account
         run: |
-          . ./assume-role.sh ${testing_region} ${testing_deployer_role} testing-deployment 
+          . .github/workflows/assume-role.sh ${testing_region} \
+                                             ${testing_deployer_role} \
+                                             testing-deployment
           sam deploy --stack-name ${testing_stack_name} \
             --template packaged-testing.yaml \
             --capabilities CAPABILITY_IAM \
@@ -110,8 +119,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Load env-vars.json
-        run: cicd/init-env-vars-github-action.sh
       - run: |
           # trigger the integration tests here
   
@@ -121,14 +128,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Load env-vars.json
-        run: cicd/init-env-vars-github-action.sh
       - uses: actions/download-artifact@v2
         with:
           name: packaged-prod.yaml
       - name: Deploy to production account
         run: |
-          . ./assume-role.sh ${prod_region} ${prod_deployer_role} prod-deployment 
+          . .github/workflows/assume-role.sh ${prod_region} \
+                                             ${prod_deployer_role} \
+                                             prod-deployment
           sam deploy --stack-name ${prod_stack_name} \
             --template packaged-prod.yaml \
             --capabilities CAPABILITY_IAM \

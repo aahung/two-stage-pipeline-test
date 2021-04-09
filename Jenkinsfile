@@ -85,6 +85,27 @@ pipeline {
       }
     }
 
+    stage('deploy-testing') {
+      when {
+        branch 'main'
+      }
+      steps {
+        withAWS(credentials: 'test', region: 'us-east-2') {
+          sh '''
+            . pipeline/assume-role.sh ${TESTING_DEPLOYER_ROLE} testing-deployment 
+            sam deploy --stack-name ${TESTING_STACK_NAME} \
+              --template packaged-testing.yaml \
+              --capabilities CAPABILITY_IAM \
+              --region ${TESTING_REGION} \
+              --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
+              --image-repository ${TESTING_ECR_REPO} \
+              --no-fail-on-empty-changeset \
+              --role-arn ${TESTING_CFN_DEPLOYMENT_ROLE}
+          '''
+        }
+      }
+    }
+
     stage('integration-test') {
       when {
         branch 'main'

@@ -10,7 +10,17 @@ pipeline {
     aws_secret_access_key_ = "${env.AWS_SECRET_ACCESS_KEY}"
     sam_template = "template.yaml"
     testing_stack_name = "test-stack"
+    testing_deployer_role = "arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP"
+    testing_cfn_deployment_role = "arn:aws:iam::191762412092:role/stage-resource-stack-CFNDeploymentRole-1LHD5N7FSUGB6"
+    testing_artifacts_bucket = "stage-resource-stack-artifactsbucket-1t96af9pkc631"
+    testing_ecr_repo = "191762412092.dkr.ecr.us-east-2.amazonaws.com/test"
+    testing_region = "us-east-2"
     prod_stack_name = "prod-stack"
+    prod_deployer_role = "arn:aws:iam::013714286599:role/stack-resource-stack-DeployerRole-1MKUWNLR7G6I9"
+    prod_cfn_deployment_role = "arn:aws:iam::013714286599:role/stack-resource-stack-CFNDeploymentRole-1UHQLSY8D9LY1"
+    prod_artifacts_bucket = "stack-resource-stack-artifactsbucket-1tecc3mhymec7"
+    prod_ecr_repo = "013714286599.dkr.ecr.us-east-2.amazonaws.com/test"
+    prod_region = "us-east-2"
   }
   stages {
     // uncomment and modify the following step for running the unit-tests
@@ -29,9 +39,8 @@ pipeline {
       }
       steps {
         sh '''
-          . cicd/init-env-vars.sh
-          . ./assume-role.sh ${testing_region} ${testing_deployer_role} testing-packaging 
-          sam build --template ${sam_template} --use-container
+          . .cicd/assume-role.sh ${testing_region} ${testing_deployer_role} testing-packaging 
+          sam build --template ${sam_template}
           sam deploy --stack-name features-${CI_COMMIT_REF_NAME}-cfn-stack \
             --capabilities CAPABILITY_IAM \
             --region ${testing_region} \
@@ -48,18 +57,18 @@ pipeline {
         branch 'main'
       }
       steps {
+        sh 'sam build --template ${sam_template}'
         sh '''
-          . cicd/init-env-vars.sh
-          sam build --template ${sam_template}
-
-          . ./assume-role.sh ${testing_region} ${testing_deployer_role} testing-packaging 
+          . .cicd/assume-role.sh ${testing_region} ${testing_deployer_role} testing-packaging 
           sam package \
             --s3-bucket ${testing_artifacts_bucket} \
             --image-repository ${testing_ecr_repo} \
             --region ${testing_region} \
             --output-template-file packaged-testing.yaml
-          
-          . ./assume-role.sh ${prod_region} ${prod_deployer_role} prod-packaging 
+        '''
+
+        sh '''
+          . .cicd/assume-role.sh ${prod_region} ${prod_deployer_role} prod-packaging 
           sam package \
             --s3-bucket ${prod_artifacts_bucket} \
             --image-repository ${prod_ecr_repo} \
@@ -78,7 +87,6 @@ pipeline {
       }
       steps {
         sh '''
-          . cicd/init-env-vars.sh
           
           # trigger the integration tests here
         '''
@@ -91,9 +99,7 @@ pipeline {
       }
       steps {
         sh '''
-          . cicd/init-env-vars.sh
-          
-          . ./assume-role.sh ${prod_region} ${prod_deployer_role} prod-deployment 
+          . .cicd/assume-role.sh ${prod_region} ${prod_deployer_role} prod-deployment 
           sam deploy --stack-name ${prod_stack_name} \
             --template packaged-prod.yaml \
             --capabilities CAPABILITY_IAM \

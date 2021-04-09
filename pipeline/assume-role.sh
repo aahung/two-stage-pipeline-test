@@ -1,19 +1,8 @@
 #!/bin/sh
 
-REGION=$1
-ROLE=$2
-SESSION_NAME=$3
+ROLE=$1
+SESSION_NAME=$2
 
-# Reset to the Deployer IAM user before assuming the role to avoid assuming a role from another role
-# shellcheck disable=SC2154
-export AWS_ACCESS_KEY_ID=$PIPELINE_USER_AWS_ACCESS_KEY_ID
-# shellcheck disable=SC2154
-export AWS_SECRET_ACCESS_KEY=$PIPELINE_USER_AWS_SECRET_ACCESS_KEY
-
-unset AWS_SESSION_TOKEN
-export AWS_DEFAULT_REGION=$REGION
-
-# Now assume the role
 assumed_cred=$(aws sts assume-role \
            --role-arn "$ROLE" \
            --role-session-name "$SESSION_NAME" \

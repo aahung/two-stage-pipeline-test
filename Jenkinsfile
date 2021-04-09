@@ -6,9 +6,6 @@ pipeline {
     }
   }
   environment {
-    _ = credentials('test') // Use Jenkins plugin: AWS Steps to configure the credential
-    PIPELINE_USER_AWS_ACCESS_KEY_ID = "${env.AWS_ACCESS_KEY_ID}"
-    PIPELINE_USER_AWS_SECRET_ACCESS_KEY = "${env.AWS_SECRET_ACCESS_KEY}"
     SAM_TEMPLATE = "template.yaml"
     TESTING_STACK_NAME = "test-stack"
     TESTING_DEPLOYER_ROLE = "arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP"
@@ -39,17 +36,19 @@ pipeline {
         branch 'feature*'
       }
       steps {
-        sh '''
-          . pipeline/assume-role.sh ${TESTING_REGION} ${TESTING_DEPLOYER_ROLE} testing-packaging 
-          sam build --template ${SAM_TEMPLATE}
-          sam deploy --stack-name features-${env.BRANCH_NAME}-cfn-stack \
-            --capabilities CAPABILITY_IAM \
-            --region ${TESTING_REGION} \
-            --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
-            --image-repository ${TESTING_ECR_REPO} \
-            --no-fail-on-empty-changeset \
-            --role-arn ${TESTING_CFN_DEPLOYMENT_ROLE}
-        '''
+        withAWS(credentials: 'test', region: 'us-east-2') {
+          sh '''
+            . pipeline/assume-role.sh ${TESTING_DEPLOYER_ROLE} testing-packaging 
+            sam build --template ${SAM_TEMPLATE}
+            sam deploy --stack-name features-${env.BRANCH_NAME}-cfn-stack \
+              --capabilities CAPABILITY_IAM \
+              --region ${TESTING_REGION} \
+              --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
+              --image-repository ${TESTING_ECR_REPO} \
+              --no-fail-on-empty-changeset \
+              --role-arn ${TESTING_CFN_DEPLOYMENT_ROLE}
+          '''
+        }
       }
     }
 
@@ -59,23 +58,27 @@ pipeline {
       }
       steps {
         sh 'sam build --template ${SAM_TEMPLATE}'
-        sh '''
-          . pipeline/assume-role.sh ${TESTING_REGION} ${TESTING_DEPLOYER_ROLE} testing-packaging 
-          sam package \
-            --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
-            --image-repository ${TESTING_ECR_REPO} \
-            --region ${TESTING_REGION} \
-            --output-template-file packaged-testing.yaml
-        '''
+        withAWS(credentials: 'test', region: 'us-east-2') {
+          sh '''
+            . pipeline/assume-role.sh ${TESTING_DEPLOYER_ROLE} testing-packaging 
+            sam package \
+              --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
+              --image-repository ${TESTING_ECR_REPO} \
+              --region ${TESTING_REGION} \
+              --output-template-file packaged-testing.yaml
+          '''
+        }
 
-        sh '''
-          . pipeline/assume-role.sh ${PROD_REGION} ${PROD_DEPLOYER_ROLE} prod-packaging 
-          sam package \
-            --s3-bucket ${PROD_ARTIFACTS_BUCKET} \
-            --image-repository ${PROD_ECR_REPO} \
-            --region ${PROD_REGION} \
-            --output-template-file packaged-prod.yaml
-        '''
+        withAWS(credentials: 'test', region: 'us-east-2') {
+          sh '''
+            . pipeline/assume-role.sh ${PROD_DEPLOYER_ROLE} prod-packaging 
+            sam package \
+              --s3-bucket ${PROD_ARTIFACTS_BUCKET} \
+              --image-repository ${PROD_ECR_REPO} \
+              --region ${PROD_REGION} \
+              --output-template-file packaged-prod.yaml
+          '''
+        }
 
         archiveArtifacts artifacts: 'packaged-testing.yaml'
         archiveArtifacts artifacts: 'packaged-prod.yaml'
@@ -99,17 +102,19 @@ pipeline {
         branch 'main'
       }
       steps {
-        sh '''
-          . pipeline/assume-role.sh ${PROD_REGION} ${PROD_DEPLOYER_ROLE} prod-deployment 
-          sam deploy --stack-name ${PROD_STACK_NAME} \
-            --template packaged-prod.yaml \
-            --capabilities CAPABILITY_IAM \
-            --region ${PROD_REGION} \
-            --s3-bucket ${PROD_ARTIFACTS_BUCKET} \
-            --image-repository ${PROD_ECR_REPO} \
-            --no-fail-on-empty-changeset \
-            --role-arn ${PROD_CFN_DEPLOYMENT_ROLE}
-        '''
+        withAWS(credentials: 'test', region: 'us-east-2') {
+          sh '''
+            . pipeline/assume-role.sh ${PROD_DEPLOYER_ROLE} prod-deployment 
+            sam deploy --stack-name ${PROD_STACK_NAME} \
+              --template packaged-prod.yaml \
+              --capabilities CAPABILITY_IAM \
+              --region ${PROD_REGION} \
+              --s3-bucket ${PROD_ARTIFACTS_BUCKET} \
+              --image-repository ${PROD_ECR_REPO} \
+              --no-fail-on-empty-changeset \
+              --role-arn ${PROD_CFN_DEPLOYMENT_ROLE}
+          '''
+        }
       }
     }
   }

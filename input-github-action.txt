@@ -1,0 +1,15 @@
+
+
+
+
+test-stack
+arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP
+arn:aws:iam::191762412092:role/stage-resource-stack-CFNDeploymentRole-1LHD5N7FSUGB6
+stage-resource-stack-artifactsbucket-1t96af9pkc631
+191762412092.dkr.ecr.us-east-2.amazonaws.com/test
+
+prod-stack
+arn:aws:iam::013714286599:role/stack-resource-stack-DeployerRole-1MKUWNLR7G6I9
+arn:aws:iam::013714286599:role/stack-resource-stack-CFNDeploymentRole-1UHQLSY8D9LY1
+stack-resource-stack-artifactsbucket-1tecc3mhymec7
+013714286599.dkr.ecr.us-east-2.amazonaws.com/test

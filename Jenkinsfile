@@ -1,7 +1,7 @@
 pipeline {
   agent {
     docker { 
-      image 'public.ecr.aws/sam/build-python3.8'
+      image 'public.ecr.aws/sam/build-provided'
       args '--user 0:0 -v /var/run/docker.sock:/var/run/docker.sock'
     }
   }

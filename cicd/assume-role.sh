@@ -17,3 +17,7 @@ cred=$(aws sts assume-role \
 export AWS_ACCESS_KEY_ID=$(echo $cred | awk '{split($0, tokens, " "); print tokens[1]}')
 export AWS_SECRET_ACCESS_KEY=$(echo $cred | awk '{split($0, tokens, " "); print tokens[2]}')
 export AWS_SESSION_TOKEN=$(echo $cred | awk '{split($0, tokens, " "); print tokens[3]}')
+
+# check which shell it is
+echo $0
+head $0

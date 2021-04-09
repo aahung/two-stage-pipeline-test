@@ -2,6 +2,7 @@ pipeline {
   agent {
     docker { 
       image 'public.ecr.aws/sam/build-python3.8'
+      args '--user 0:0'
     }
   }
   environment {

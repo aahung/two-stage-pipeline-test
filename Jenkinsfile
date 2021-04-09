@@ -8,14 +8,14 @@ pipeline {
   environment {
     SAM_TEMPLATE = "template.yaml"
     TESTING_STACK_NAME = "test-stack"
-    TESTING_DEPLOYER_ROLE = "arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP"
-    TESTING_CFN_DEPLOYMENT_ROLE = "arn:aws:iam::191762412092:role/stage-resource-stack-CFNDeploymentRole-1LHD5N7FSUGB6"
+    TESTING_PIPELINE_EXECUTION_ROLE = "arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP"
+    TESTING_CLOUDFORMATION_EXECUTION_ROLE = "arn:aws:iam::191762412092:role/stage-resource-stack-CFNDeploymentRole-1LHD5N7FSUGB6"
     TESTING_ARTIFACTS_BUCKET = "stage-resource-stack-artifactsbucket-1t96af9pkc631"
     TESTING_ECR_REPO = "191762412092.dkr.ecr.us-east-2.amazonaws.com/test"
     TESTING_REGION = "us-east-2"
     PROD_STACK_NAME = "prod-stack"
-    PROD_DEPLOYER_ROLE = "arn:aws:iam::013714286599:role/stack-resource-stack-DeployerRole-1MKUWNLR7G6I9"
-    PROD_CFN_DEPLOYMENT_ROLE = "arn:aws:iam::013714286599:role/stack-resource-stack-CFNDeploymentRole-1UHQLSY8D9LY1"
+    PROD_PIPELINE_EXECUTION_ROLE = "arn:aws:iam::013714286599:role/stack-resource-stack-DeployerRole-1MKUWNLR7G6I9"
+    PROD_CLOUDFORMATION_EXECUTION_ROLE = "arn:aws:iam::013714286599:role/stack-resource-stack-CFNDeploymentRole-1UHQLSY8D9LY1"
     PROD_ARTIFACTS_BUCKET = "stack-resource-stack-artifactsbucket-1tecc3mhymec7"
     PROD_ECR_REPO = "013714286599.dkr.ecr.us-east-2.amazonaws.com/test"
     PROD_REGION = "us-east-2"
@@ -38,7 +38,7 @@ pipeline {
       steps {
         withAWS(credentials: 'test', region: 'us-east-2') {
           sh '''
-            . pipeline/assume-role.sh ${TESTING_DEPLOYER_ROLE} testing-packaging 
+            . pipeline/assume-role.sh ${TESTING_PIPELINE_EXECUTION_ROLE} testing-packaging 
             sam build --template ${SAM_TEMPLATE}
             sam deploy --stack-name features-${env.BRANCH_NAME}-cfn-stack \
               --capabilities CAPABILITY_IAM \
@@ -46,7 +46,7 @@ pipeline {
               --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
               --image-repository ${TESTING_ECR_REPO} \
               --no-fail-on-empty-changeset \
-              --role-arn ${TESTING_CFN_DEPLOYMENT_ROLE}
+              --role-arn ${TESTING_CLOUDFORMATION_EXECUTION_ROLE}
           '''
         }
       }
@@ -60,7 +60,7 @@ pipeline {
         sh 'sam build --template ${SAM_TEMPLATE}'
         withAWS(credentials: 'test', region: 'us-east-2') {
           sh '''
-            . pipeline/assume-role.sh ${TESTING_DEPLOYER_ROLE} testing-packaging 
+            . pipeline/assume-role.sh ${TESTING_PIPELINE_EXECUTION_ROLE} testing-packaging 
             sam package \
               --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
               --image-repository ${TESTING_ECR_REPO} \
@@ -71,7 +71,7 @@ pipeline {
 
         withAWS(credentials: 'test', region: 'us-east-2') {
           sh '''
-            . pipeline/assume-role.sh ${PROD_DEPLOYER_ROLE} prod-packaging 
+            . pipeline/assume-role.sh ${PROD_PIPELINE_EXECUTION_ROLE} prod-packaging 
             sam package \
               --s3-bucket ${PROD_ARTIFACTS_BUCKET} \
               --image-repository ${PROD_ECR_REPO} \
@@ -92,7 +92,7 @@ pipeline {
       steps {
         withAWS(credentials: 'test', region: 'us-east-2') {
           sh '''
-            . pipeline/assume-role.sh ${TESTING_DEPLOYER_ROLE} testing-deployment 
+            . pipeline/assume-role.sh ${TESTING_PIPELINE_EXECUTION_ROLE} testing-deployment
             sam deploy --stack-name ${TESTING_STACK_NAME} \
               --template packaged-testing.yaml \
               --capabilities CAPABILITY_IAM \
@@ -100,23 +100,24 @@ pipeline {
               --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
               --image-repository ${TESTING_ECR_REPO} \
               --no-fail-on-empty-changeset \
-              --role-arn ${TESTING_CFN_DEPLOYMENT_ROLE}
+              --role-arn ${TESTING_CLOUDFORMATION_EXECUTION_ROLE}
           '''
         }
       }
     }
 
-    stage('integration-test') {
-      when {
-        branch 'main'
-      }
-      steps {
-        sh '''
+    // uncomment and modify the following step for running the integration-tests
+    // stage('integration-test') {
+    //   when {
+    //     branch 'main'
+    //   }
+    //   steps {
+    //     sh '''
           
-          # trigger the integration tests here
-        '''
-      }
-    }
+    //       # trigger the integration tests here
+    //     '''
+    //   }
+    // }
 
     stage('deploy-prod') {
       when {
@@ -125,7 +126,7 @@ pipeline {
       steps {
         withAWS(credentials: 'test', region: 'us-east-2') {
           sh '''
-            . pipeline/assume-role.sh ${PROD_DEPLOYER_ROLE} prod-deployment 
+            . pipeline/assume-role.sh ${PROD_PIPELINE_EXECUTION_ROLE} prod-deployment 
             sam deploy --stack-name ${PROD_STACK_NAME} \
               --template packaged-prod.yaml \
               --capabilities CAPABILITY_IAM \
@@ -133,7 +134,7 @@ pipeline {
               --s3-bucket ${PROD_ARTIFACTS_BUCKET} \
               --image-repository ${PROD_ECR_REPO} \
               --no-fail-on-empty-changeset \
-              --role-arn ${PROD_CFN_DEPLOYMENT_ROLE}
+              --role-arn ${PROD_CLOUDFORMATION_EXECUTION_ROLE}
           '''
         }
       }

@@ -2,7 +2,7 @@ pipeline {
   agent {
     docker { 
       image 'public.ecr.aws/sam/build-python3.8'
-      args '--user 0:0'
+      args '--user 0:0 -v /var/run/docker.sock:/var/run/docker.sock'
     }
   }
   environment {
@@ -38,8 +38,8 @@ pipeline {
       steps {
         withAWS(credentials: 'test', region: 'us-east-2') {
           sh '''
-            . pipeline/assume-role.sh ${TESTING_PIPELINE_EXECUTION_ROLE} testing-packaging 
-            sam build --template ${SAM_TEMPLATE}
+            . pipeline/assume-role.sh ${TESTING_PIPELINE_EXECUTION_ROLE} testing-packaging
+            sam build --template ${SAM_TEMPLATE} --use-container
             sam deploy --stack-name features-${env.BRANCH_NAME}-cfn-stack \
               --capabilities CAPABILITY_IAM \
               --region ${TESTING_REGION} \
@@ -57,10 +57,10 @@ pipeline {
         branch 'main'
       }
       steps {
-        sh 'sam build --template ${SAM_TEMPLATE}'
+        sh 'sam build --template ${SAM_TEMPLATE} --use-container'
         withAWS(credentials: 'test', region: 'us-east-2') {
           sh '''
-            . pipeline/assume-role.sh ${TESTING_PIPELINE_EXECUTION_ROLE} testing-packaging 
+            . pipeline/assume-role.sh ${TESTING_PIPELINE_EXECUTION_ROLE} testing-packaging
             sam package \
               --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
               --image-repository ${TESTING_ECR_REPO} \
@@ -71,7 +71,7 @@ pipeline {
 
         withAWS(credentials: 'test', region: 'us-east-2') {
           sh '''
-            . pipeline/assume-role.sh ${PROD_PIPELINE_EXECUTION_ROLE} prod-packaging 
+            . pipeline/assume-role.sh ${PROD_PIPELINE_EXECUTION_ROLE} prod-packaging
             sam package \
               --s3-bucket ${PROD_ARTIFACTS_BUCKET} \
               --image-repository ${PROD_ECR_REPO} \
@@ -126,7 +126,7 @@ pipeline {
       steps {
         withAWS(credentials: 'test', region: 'us-east-2') {
           sh '''
-            . pipeline/assume-role.sh ${PROD_PIPELINE_EXECUTION_ROLE} prod-deployment 
+            . pipeline/assume-role.sh ${PROD_PIPELINE_EXECUTION_ROLE} prod-deployment
             sam deploy --stack-name ${PROD_STACK_NAME} \
               --template packaged-prod.yaml \
               --capabilities CAPABILITY_IAM \

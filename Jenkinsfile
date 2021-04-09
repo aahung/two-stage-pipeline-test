@@ -2,25 +2,26 @@ pipeline {
   agent {
     docker { 
       image 'public.ecr.aws/sam/build-python3.8'
+      args '--user 0:0'
     }
   }
   environment {
     _ = credentials('test') // Use Jenkins plugin: AWS Steps to configure the credential
-    PIPELINE_USER_AWS_ACCESS_KEY_ID = "${env.AWS_ACCESS_KEY_ID}"
-    PIPELINE_USER_AWS_SECRET_ACCESS_KEY = "${env.AWS_SECRET_ACCESS_KEY}"
-    SAM_TEMPLATE = "template.yaml"
-    TESTING_STACK_NAME = "test-stack"
-    TESTING_DEPLOYER_ROLE = "arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP"
-    TESTING_CFN_DEPLOYMENT_ROLE = "arn:aws:iam::191762412092:role/stage-resource-stack-CFNDeploymentRole-1LHD5N7FSUGB6"
-    TESTING_ARTIFACTS_BUCKET = "stage-resource-stack-artifactsbucket-1t96af9pkc631"
-    TESTING_ECR_REPO = "191762412092.dkr.ecr.us-east-2.amazonaws.com/test"
-    TESTING_REGION = "us-east-2"
-    PROD_STACK_NAME = "prod-stack"
-    PROD_DEPLOYER_ROLE = "arn:aws:iam::013714286599:role/stack-resource-stack-DeployerRole-1MKUWNLR7G6I9"
-    PROD_CFN_DEPLOYMENT_ROLE = "arn:aws:iam::013714286599:role/stack-resource-stack-CFNDeploymentRole-1UHQLSY8D9LY1"
-    PROD_ARTIFACTS_BUCKET = "stack-resource-stack-artifactsbucket-1tecc3mhymec7"
-    PROD_ECR_REPO = "013714286599.dkr.ecr.us-east-2.amazonaws.com/test"
-    PROD_REGION = "us-east-2"
+    aws_access_key_id_ = "${env.AWS_ACCESS_KEY_ID}"
+    aws_secret_access_key_ = "${env.AWS_SECRET_ACCESS_KEY}"
+    sam_template = "template.yaml"
+    testing_stack_name = "test-stack"
+    testing_deployer_role = "arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP"
+    testing_cfn_deployment_role = "arn:aws:iam::191762412092:role/stage-resource-stack-CFNDeploymentRole-1LHD5N7FSUGB6"
+    testing_artifacts_bucket = "stage-resource-stack-artifactsbucket-1t96af9pkc631"
+    testing_ecr_repo = "191762412092.dkr.ecr.us-east-2.amazonaws.com/test"
+    testing_region = "us-east-2"
+    prod_stack_name = "prod-stack"
+    prod_deployer_role = "arn:aws:iam::013714286599:role/stack-resource-stack-DeployerRole-1MKUWNLR7G6I9"
+    prod_cfn_deployment_role = "arn:aws:iam::013714286599:role/stack-resource-stack-CFNDeploymentRole-1UHQLSY8D9LY1"
+    prod_artifacts_bucket = "stack-resource-stack-artifactsbucket-1tecc3mhymec7"
+    prod_ecr_repo = "013714286599.dkr.ecr.us-east-2.amazonaws.com/test"
+    prod_region = "us-east-2"
   }
   stages {
     // uncomment and modify the following step for running the unit-tests
@@ -39,15 +40,15 @@ pipeline {
       }
       steps {
         sh '''
-          . pipeline/assume-role.sh ${TESTING_REGION} ${TESTING_DEPLOYER_ROLE} testing-packaging 
-          sam build --template ${SAM_TEMPLATE}
-          sam deploy --stack-name features-${env.BRANCH_NAME}-cfn-stack \
+          . cicd/assume-role.sh ${testing_region} ${testing_deployer_role} testing-packaging 
+          sam build --template ${sam_template}
+          sam deploy --stack-name features-${CI_COMMIT_REF_NAME}-cfn-stack \
             --capabilities CAPABILITY_IAM \
-            --region ${TESTING_REGION} \
-            --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
-            --image-repository ${TESTING_ECR_REPO} \
+            --region ${testing_region} \
+            --s3-bucket ${testing_artifacts_bucket} \
+            --image-repository ${testing_ecr_repo} \
             --no-fail-on-empty-changeset \
-            --role-arn ${TESTING_CFN_DEPLOYMENT_ROLE}
+            --role-arn ${testing_cfn_deployment_role}
         '''
       }
     }
@@ -57,22 +58,22 @@ pipeline {
         branch 'main'
       }
       steps {
-        sh 'sam build --template ${SAM_TEMPLATE}'
+        sh 'sam build --template ${sam_template} --use-container'
         sh '''
-          . pipeline/assume-role.sh ${TESTING_REGION} ${TESTING_DEPLOYER_ROLE} testing-packaging 
+          . cicd/assume-role.sh ${testing_region} ${testing_deployer_role} testing-packaging 
           sam package \
-            --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
-            --image-repository ${TESTING_ECR_REPO} \
-            --region ${TESTING_REGION} \
+            --s3-bucket ${testing_artifacts_bucket} \
+            --image-repository ${testing_ecr_repo} \
+            --region ${testing_region} \
             --output-template-file packaged-testing.yaml
         '''
 
         sh '''
-          . pipeline/assume-role.sh ${PROD_REGION} ${PROD_DEPLOYER_ROLE} prod-packaging 
+          . cicd/assume-role.sh ${prod_region} ${prod_deployer_role} prod-packaging 
           sam package \
-            --s3-bucket ${PROD_ARTIFACTS_BUCKET} \
-            --image-repository ${PROD_ECR_REPO} \
-            --region ${PROD_REGION} \
+            --s3-bucket ${prod_artifacts_bucket} \
+            --image-repository ${prod_ecr_repo} \
+            --region ${prod_region} \
             --output-template-file packaged-prod.yaml
         '''
 
@@ -99,15 +100,15 @@ pipeline {
       }
       steps {
         sh '''
-          . pipeline/assume-role.sh ${PROD_REGION} ${PROD_DEPLOYER_ROLE} prod-deployment 
-          sam deploy --stack-name ${PROD_STACK_NAME} \
+          . cicd/assume-role.sh ${prod_region} ${prod_deployer_role} prod-deployment 
+          sam deploy --stack-name ${prod_stack_name} \
             --template packaged-prod.yaml \
             --capabilities CAPABILITY_IAM \
-            --region ${PROD_REGION} \
-            --s3-bucket ${PROD_ARTIFACTS_BUCKET} \
-            --image-repository ${PROD_ECR_REPO} \
+            --region ${prod_region} \
+            --s3-bucket ${prod_artifacts_bucket} \
+            --image-repository ${prod_ecr_repo} \
             --no-fail-on-empty-changeset \
-            --role-arn ${PROD_CFN_DEPLOYMENT_ROLE}
+            --role-arn ${prod_cfn_deployment_role}
         '''
       }
     }

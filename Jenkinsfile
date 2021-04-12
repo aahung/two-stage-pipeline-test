@@ -45,7 +45,7 @@ pipeline {
             roleSessionName: 'testing-packaging') {
           sh 'sam build --template ${SAM_TEMPLATE} --use-container'
           sh '''
-            sam deploy --stack-name features-${env.BRANCH_NAME}-cfn-stack \
+            sam deploy --stack-name features-${BRANCH_NAME}-cfn-stack \
               --capabilities CAPABILITY_IAM \
               --region ${TESTING_REGION} \
               --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \

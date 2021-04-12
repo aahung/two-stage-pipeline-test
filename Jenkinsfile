@@ -6,7 +6,9 @@ pipeline {
     }
   }
   environment {
+    DEPLOYER_CREDENTIAL_ID = 'test'
     SAM_TEMPLATE = 'template.yaml'
+    MAIN_BRANCH = 'main'
     TESTING_STACK_NAME = 'test-stack'
     TESTING_PIPELINE_EXECUTION_ROLE = 'arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP'
     TESTING_CLOUDFORMATION_EXECUTION_ROLE = 'arn:aws:iam::191762412092:role/stage-resource-stack-CFNDeploymentRole-1LHD5N7FSUGB6'
@@ -37,8 +39,8 @@ pipeline {
       }
       steps {
         withAWS(
-            credentials: 'test',
-            region: 'us-east-2',
+            credentials: env.DEPLOYER_CREDENTIAL_ID,
+            region: env.TESTING_REGION,
             role: env.TESTING_PIPELINE_EXECUTION_ROLE,
             roleSessionName: 'testing-packaging') {
           sh 'sam build --template ${SAM_TEMPLATE} --use-container'
@@ -57,13 +59,13 @@ pipeline {
 
     stage('build') {
       when {
-        branch 'main'
+        branch env.MAIN_BRANCH
       }
       steps {
         sh 'sam build --template ${SAM_TEMPLATE} --use-container'
         withAWS(
-            credentials: 'test',
-            region: 'us-east-2',
+            credentials: env.DEPLOYER_CREDENTIAL_ID,
+            region: env.TESTING_REGION,
             role: env.TESTING_PIPELINE_EXECUTION_ROLE,
             roleSessionName: 'testing-packaging') {
           sh '''
@@ -76,8 +78,8 @@ pipeline {
         }
 
         withAWS(
-            credentials: 'test',
-            region: 'us-east-2',
+            credentials: env.DEPLOYER_CREDENTIAL_ID,
+            region: env.PROD_REGION,
             role: env.PROD_PIPELINE_EXECUTION_ROLE,
             roleSessionName: 'prod-packaging') {
           sh '''
@@ -96,12 +98,15 @@ pipeline {
 
     stage('deploy-testing') {
       when {
-        branch 'main'
+        branch env.MAIN_BRANCH
       }
       steps {
-        withAWS(credentials: 'test', region: 'us-east-2') {
+        withAWS(
+            credentials: env.DEPLOYER_CREDENTIAL_ID, 
+            region: env.TESTING_REGION,
+            role: env.TESTING_PIPELINE_EXECUTION_ROLE,
+            roleSessionName: 'testing-deployment') {
           sh '''
-            . aws-sam-pipeline/assume-role.sh ${TESTING_PIPELINE_EXECUTION_ROLE} testing-deployment
             sam deploy --stack-name ${TESTING_STACK_NAME} \
               --template packaged-testing.yaml \
               --capabilities CAPABILITY_IAM \
@@ -118,7 +123,7 @@ pipeline {
     // uncomment and modify the following step for running the integration-tests
     // stage('integration-test') {
     //   when {
-    //     branch 'main'
+    //     branch env.MAIN_BRANCH
     //   }
     //   steps {
     //     sh '''
@@ -130,12 +135,15 @@ pipeline {
 
     stage('deploy-prod') {
       when {
-        branch 'main'
+        branch env.MAIN_BRANCH
       }
       steps {
-        withAWS(credentials: 'test', region: 'us-east-2') {
+        withAWS(
+            credentials: env.DEPLOYER_CREDENTIAL_ID, 
+            region: env.PROD_REGION,
+            role: env.PROD_PIPELINE_EXECUTION_ROLE,
+            roleSessionName: 'prod-deployment') {
           sh '''
-            . aws-sam-pipeline/assume-role.sh ${PROD_PIPELINE_EXECUTION_ROLE} prod-deployment
             sam deploy --stack-name ${PROD_STACK_NAME} \
               --template packaged-prod.yaml \
               --capabilities CAPABILITY_IAM \

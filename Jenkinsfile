@@ -1,4 +1,5 @@
 pipeline {
+  agent any
   environment {
     PIPELINE_USER_CREDENTIAL_ID = 'test'
     SAM_TEMPLATE = 'template.yaml'

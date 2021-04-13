@@ -10,7 +10,7 @@ pipeline {
     TESTING_ARTIFACTS_BUCKET = 'stage-resource-stack-artifactsbucket-1t96af9pkc631'
     // If there are functions with "Image" PackageType in your template,
     // uncomment the line below and add "--image-repository ${TESTING_ECR_REPO}" to
-    // "sam package" and "sam deploy" commends.
+    // testing "sam package" and "sam deploy" commands.
     // TESTING_ECR_REPO = '0123456789.dkr.ecr.region.amazonaws.com/repository-name'
     TESTING_REGION = 'us-east-2'
     PROD_STACK_NAME = 'prod-stack'
@@ -53,7 +53,8 @@ pipeline {
             sam deploy --stack-name $(echo $BRANCH_NAME | tr -cd '[a-zA-Z0-9-]') \
               --capabilities CAPABILITY_IAM \
               --region ${TESTING_REGION} \
-              --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \--no-fail-on-empty-changeset \
+              --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
+              --no-fail-on-empty-changeset \
               --role-arn ${TESTING_CLOUDFORMATION_EXECUTION_ROLE}
           '''
         }
@@ -79,7 +80,8 @@ pipeline {
             roleSessionName: 'testing-packaging') {
           sh '''
             sam package \
-              --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \--region ${TESTING_REGION} \
+              --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
+              --region ${TESTING_REGION} \
               --output-template-file packaged-testing.yaml
           '''
         }
@@ -123,7 +125,8 @@ pipeline {
               --template packaged-testing.yaml \
               --capabilities CAPABILITY_IAM \
               --region ${TESTING_REGION} \
-              --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \--no-fail-on-empty-changeset \
+              --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
+              --no-fail-on-empty-changeset \
               --role-arn ${TESTING_CLOUDFORMATION_EXECUTION_ROLE}
           '''
         }

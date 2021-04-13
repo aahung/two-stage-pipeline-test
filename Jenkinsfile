@@ -8,13 +8,13 @@ pipeline {
     TESTING_PIPELINE_EXECUTION_ROLE = 'arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP'
     TESTING_CLOUDFORMATION_EXECUTION_ROLE = 'arn:aws:iam::191762412092:role/stage-resource-stack-CFNDeploymentRole-1LHD5N7FSUGB6'
     TESTING_ARTIFACTS_BUCKET = 'stage-resource-stack-artifactsbucket-1t96af9pkc631'
-    TESTING_ECR_REPO = ''
+    TESTING_ECR_REPO = '191762412092.dkr.ecr.us-east-2.amazonaws.com/test'
     TESTING_REGION = 'us-east-2'
     PROD_STACK_NAME = 'prod-stack'
     PROD_PIPELINE_EXECUTION_ROLE = 'arn:aws:iam::013714286599:role/stack-resource-stack-DeployerRole-1MKUWNLR7G6I9'
     PROD_CLOUDFORMATION_EXECUTION_ROLE = 'arn:aws:iam::013714286599:role/stack-resource-stack-CFNDeploymentRole-1UHQLSY8D9LY1'
     PROD_ARTIFACTS_BUCKET = 'stack-resource-stack-artifactsbucket-1tecc3mhymec7'
-    PROD_ECR_REPO = ''
+    PROD_ECR_REPO = '013714286599.dkr.ecr.us-east-2.amazonaws.com/test'
     PROD_REGION = 'us-east-2'
   }
   stages {

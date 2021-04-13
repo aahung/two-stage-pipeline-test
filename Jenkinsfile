@@ -8,7 +8,8 @@ pipeline {
     TESTING_PIPELINE_EXECUTION_ROLE = 'arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP'
     TESTING_CLOUDFORMATION_EXECUTION_ROLE = 'arn:aws:iam::191762412092:role/stage-resource-stack-CFNDeploymentRole-1LHD5N7FSUGB6'
     TESTING_ARTIFACTS_BUCKET = 'stage-resource-stack-artifactsbucket-1t96af9pkc631'
-    TESTING_ECR_REPO = '191762412092.dkr.ecr.us-east-2.amazonaws.com/test'
+    // Uncomment the line below if there are functions with PackageType=Image in your template
+    // TESTING_ECR_REPO = ''
     TESTING_REGION = 'us-east-2'
     PROD_STACK_NAME = 'prod-stack'
     PROD_PIPELINE_EXECUTION_ROLE = 'arn:aws:iam::013714286599:role/stack-resource-stack-DeployerRole-1MKUWNLR7G6I9'
@@ -28,7 +29,7 @@ pipeline {
     // }
 
     stage('build-and-deploy-test') {
-      // this stage is triggered only for feature branches (feature-*),
+      // this stage is triggered only for feature branches (feature*),
       // which will build the stack and deploy to a stack named with branch name.
       when {
         branch 'feature*'
@@ -51,7 +52,8 @@ pipeline {
               --capabilities CAPABILITY_IAM \
               --region ${TESTING_REGION} \
               --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
-              $([ -z "${TESTING_ECR_REPO}" ] || echo "--image-repository ${TESTING_ECR_REPO}") \
+              `# Uncomment the line below if there are functions with PackageType=Image in your template` \
+              `# --image-repository ${TESTING_ECR_REPO}` \
               --no-fail-on-empty-changeset \
               --role-arn ${TESTING_CLOUDFORMATION_EXECUTION_ROLE}
           '''
@@ -79,7 +81,8 @@ pipeline {
           sh '''
             sam package \
               --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
-              $([ -z "${TESTING_ECR_REPO}" ] || echo "--image-repository ${TESTING_ECR_REPO}") \
+              `# Uncomment the line below if there are functions with PackageType=Image in your template` \
+              `# --image-repository ${TESTING_ECR_REPO}` \
               --region ${TESTING_REGION} \
               --output-template-file packaged-testing.yaml
           '''
@@ -93,7 +96,7 @@ pipeline {
           sh '''
             sam package \
               --s3-bucket ${PROD_ARTIFACTS_BUCKET} \
-              $([ -z "${PROD_ECR_REPO}" ] || echo "--image-repository ${PROD_ECR_REPO}") \
+              --image-repository ${PROD_ECR_REPO} \
               --region ${PROD_REGION} \
               --output-template-file packaged-prod.yaml
           '''
@@ -111,7 +114,6 @@ pipeline {
       agent {
         docker {
           image 'public.ecr.aws/sam/build-provided'
-          args '--user 0:0 -v /var/run/docker.sock:/var/run/docker.sock'
         }
       }
       steps {
@@ -126,8 +128,8 @@ pipeline {
               --capabilities CAPABILITY_IAM \
               --region ${TESTING_REGION} \
               --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
-              --image-repository ${TESTING_ECR_REPO} \
-              $([ -z "${TESTING_ECR_REPO}" ] || echo "--image-repository ${TESTING_ECR_REPO}") \
+              `# Uncomment the line below if there are functions with PackageType=Image in your template` \
+              `# --image-repository ${TESTING_ECR_REPO}` \
               --no-fail-on-empty-changeset \
               --role-arn ${TESTING_CLOUDFORMATION_EXECUTION_ROLE}
           '''
@@ -154,7 +156,6 @@ pipeline {
       agent {
         docker {
           image 'public.ecr.aws/sam/build-provided'
-          args '--user 0:0 -v /var/run/docker.sock:/var/run/docker.sock'
         }
       }
       steps {
@@ -169,7 +170,7 @@ pipeline {
               --capabilities CAPABILITY_IAM \
               --region ${PROD_REGION} \
               --s3-bucket ${PROD_ARTIFACTS_BUCKET} \
-              $([ -z "${PROD_ECR_REPO}" ] || echo "--image-repository ${PROD_ECR_REPO}") \
+              --image-repository ${PROD_ECR_REPO} \
               --no-fail-on-empty-changeset \
               --role-arn ${PROD_CLOUDFORMATION_EXECUTION_ROLE}
           '''

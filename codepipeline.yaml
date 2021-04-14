@@ -90,6 +90,20 @@ Resources:
                 - Name: SourceCodeAsZip
               OutputArtifacts:
                 - Name: BuildArtifactAsZip
+        - Name: Build2
+          Actions:
+            - Name: CodeBuild
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref CodeBuildProject2
+              InputArtifacts:
+                - Name: SourceCodeAsZip
+              OutputArtifacts:
+                - Name: BuildArtifactAsZip2
 
   CodePipelineExecutionRole:
     Type: AWS::IAM::Role
@@ -142,7 +156,7 @@ Resources:
                   - "codebuild:StartBuild"
                   - "codebuild:BatchGetBuilds"
                 Resource:
-                  - !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${CodeBuildProject}"
+                  - !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${CodeBuildProject}*"
               - Effect: Allow
                 Action:
                   - "cloudformation:CreateStack"
@@ -198,8 +212,7 @@ Resources:
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
                 Resource:
-                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/CodeBuildProject"
-                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/CodeBuildProject:*"
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/CodeBuildProject*"
         - PolicyName: CodeBuildArtifactsBucket
           PolicyDocument:
             Version: "2012-10-17"
@@ -223,7 +236,6 @@ Resources:
     Type: AWS::CodeBuild::Project
     Properties:
       Name: CodeBuildProject
-      Description: Build project for the SAM CLI App Template Builder
       Artifacts:
         Type: CODEPIPELINE
       Environment:
@@ -240,3 +252,21 @@ Resources:
       Source:
         Type: CODEPIPELINE
         BuildSpec: aws-sam-pipeline/buildspec.yml
+  
+  CodeBuildProject2:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: CodeBuildProject2
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:1.0
+        EnvironmentVariables:
+          - Name: BUILD_OUTPUT_BUCKET
+            Value: !Ref BuildArtifactsBucket
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: aws-sam-pipeline/buildspec2.yml

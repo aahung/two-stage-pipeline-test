@@ -27,8 +27,9 @@ pipeline {
     //   }
     // }
 
-    stage('build-feature') {
-      // this stage is triggered only for feature branches (feature*).
+    stage('build-and-deploy-feature') {
+      // this stage is triggered only for feature branches (feature*),
+      // which will build the stack and deploy to a stack named with branch name.
       when {
         branch 'feature*'
       }
@@ -40,21 +41,6 @@ pipeline {
       }
       steps {
         sh 'sam build --template ${SAM_TEMPLATE} --use-container'
-      }
-    }
-
-    stage('deploy-feature') {
-      // this stage is triggered only for feature branches (feature*),
-      // which will build deploy the built artifacts to a stack named with the branch name.
-      when {
-        branch 'feature*'
-      }
-      agent {
-        docker {
-          image 'public.ecr.aws/sam/build-provided'
-        }
-      }
-      steps {
         withAWS(
             credentials: env.PIPELINE_USER_CREDENTIAL_ID,
             region: env.TESTING_REGION,
@@ -85,19 +71,6 @@ pipeline {
       }
       steps {
         sh 'sam build --template ${SAM_TEMPLATE} --use-container'
-      }
-    }
-
-    stage('package') {
-      when {
-        branch env.MAIN_BRANCH
-      }
-      agent {
-        docker {
-          image 'public.ecr.aws/sam/build-provided'
-        }
-      }
-      steps {
         withAWS(
             credentials: env.PIPELINE_USER_CREDENTIAL_ID,
             region: env.TESTING_REGION,

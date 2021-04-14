@@ -75,6 +75,20 @@ Resources:
               OutputArtifacts:
                 - Name: !Sub ${PipelineStackName}ChangeSet
               RunOrder: 2
+        - Name: Build
+          Actions:
+            - Name: CodeBuild
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+              InputArtifacts:
+                - Name: SourceCodeAsZip
+              OutputArtifacts:
+                - Name: BuildArtifactAsZip
 
   CodePipelineExecutionRole:
     Type: AWS::IAM::Role
@@ -124,6 +138,12 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - "codebuild:StartBuild"
+                  - "codebuild:BatchGetBuilds"
+                Resource:
+                  - !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/${CodeBuildProject}"
+              - Effect: Allow
+                Action:
                   - "cloudformation:CreateStack"
                   - "cloudformation:DescribeStacks"
                   - "cloudformation:DeleteStack"
@@ -152,3 +172,69 @@ Resources:
       Path: /
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/AdministratorAccess"
+
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - "sts:AssumeRole"
+            Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+      Path: /
+      Policies:
+        - PolicyName: CodeBuildLogs
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource:
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/CodeBuildProject"
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/CodeBuildProject:*"
+        - PolicyName: CodeBuildArtifactsBucket
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                  - "s3:GetObjectVersion"
+                  - "s3:PutObject"
+                Resource:
+                  - !Sub "arn:aws:s3:::${BuildArtifactsBucket}/*"
+        - PolicyName: CodeBuildParameterStore
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: "ssm:GetParameters"
+                Resource: "*"
+
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: CodeBuildProject
+      Description: Build project for the SAM CLI App Template Builder
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:1.0
+        EnvironmentVariables:
+          - Name: BUILD_OUTPUT_BUCKET
+            Value: !Ref BuildArtifactsBucket
+      Cache:
+        Type: S3
+        Location: !Sub ${BuildArtifactsBucket}/codebuild-cache
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Source:
+        Type: CODEPIPELINE

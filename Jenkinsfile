@@ -8,10 +8,7 @@ pipeline {
     TESTING_PIPELINE_EXECUTION_ROLE = 'arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP'
     TESTING_CLOUDFORMATION_EXECUTION_ROLE = 'arn:aws:iam::191762412092:role/stage-resource-stack-CFNDeploymentRole-1LHD5N7FSUGB6'
     TESTING_ARTIFACTS_BUCKET = 'stage-resource-stack-artifactsbucket-1t96af9pkc631'
-    // If there are functions with "Image" PackageType in your template,
-    // uncomment the line below and add "--image-repository ${TESTING_ECR_REPO}" to
-    // testing "sam package" and "sam deploy" commands.
-    // TESTING_ECR_REPO = '0123456789.dkr.ecr.region.amazonaws.com/repository-name'
+    TESTING_ECR_REPO = '191762412092.dkr.ecr.us-east-2.amazonaws.com/test'
     TESTING_REGION = 'us-east-2'
     PROD_STACK_NAME = 'prod-stack'
     PROD_PIPELINE_EXECUTION_ROLE = 'arn:aws:iam::013714286599:role/stack-resource-stack-DeployerRole-1MKUWNLR7G6I9'
@@ -30,9 +27,8 @@ pipeline {
     //   }
     // }
 
-    stage('build-and-deploy-test') {
-      // this stage is triggered only for feature branches (feature*),
-      // which will build the stack and deploy to a stack named with branch name.
+    stage('build-feature') {
+      // this stage is triggered only for feature branches (feature*).
       when {
         branch 'feature*'
       }
@@ -44,6 +40,21 @@ pipeline {
       }
       steps {
         sh 'sam build --template ${SAM_TEMPLATE} --use-container'
+      }
+    }
+
+    stage('deploy-feature') {
+      // this stage is triggered only for feature branches (feature*),
+      // which will build deploy the built artifacts to a stack named with the branch name.
+      when {
+        branch 'feature*'
+      }
+      agent {
+        docker {
+          image 'public.ecr.aws/sam/build-provided'
+        }
+      }
+      steps {
         withAWS(
             credentials: env.PIPELINE_USER_CREDENTIAL_ID,
             region: env.TESTING_REGION,
@@ -54,6 +65,7 @@ pipeline {
               --capabilities CAPABILITY_IAM \
               --region ${TESTING_REGION} \
               --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
+              --image-repository ${TESTING_ECR_REPO} \
               --no-fail-on-empty-changeset \
               --role-arn ${TESTING_CLOUDFORMATION_EXECUTION_ROLE}
           '''
@@ -73,6 +85,19 @@ pipeline {
       }
       steps {
         sh 'sam build --template ${SAM_TEMPLATE} --use-container'
+      }
+    }
+
+    stage('package') {
+      when {
+        branch env.MAIN_BRANCH
+      }
+      agent {
+        docker {
+          image 'public.ecr.aws/sam/build-provided'
+        }
+      }
+      steps {
         withAWS(
             credentials: env.PIPELINE_USER_CREDENTIAL_ID,
             region: env.TESTING_REGION,
@@ -81,6 +106,7 @@ pipeline {
           sh '''
             sam package \
               --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
+              --image-repository ${TESTING_ECR_REPO} \
               --region ${TESTING_REGION} \
               --output-template-file packaged-testing.yaml
           '''
@@ -126,6 +152,7 @@ pipeline {
               --capabilities CAPABILITY_IAM \
               --region ${TESTING_REGION} \
               --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
+              --image-repository ${TESTING_ECR_REPO} \
               --no-fail-on-empty-changeset \
               --role-arn ${TESTING_CLOUDFORMATION_EXECUTION_ROLE}
           '''

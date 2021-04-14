@@ -239,3 +239,4 @@ Resources:
       ServiceRole: !GetAtt CodeBuildServiceRole.Arn
       Source:
         Type: CODEPIPELINE
+        BuildSpec: aws-sam-pipeline/buildspec.yml

@@ -26,6 +26,7 @@ Resources:
         Location: !Ref BuildArtifactsBucket
         Type: S3
       RoleArn: !GetAtt CodePipelineExecutionRole.Arn
+      RestartExecutionOnUpdate: true
       Stages:
         - Name: Source
           Actions:

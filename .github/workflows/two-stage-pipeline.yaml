@@ -47,8 +47,8 @@ jobs:
           aws-secret-access-key: ${{ env.PIPELINE_USER_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.TESTING_REGION }}
           role-to-assume: ${{ env.TESTING_PIPELINE_EXECUTION_ROLE }}
-          role-duration-seconds: 3600
           role-session-name: feature-deployment
+          role-duration-seconds: 3600
           role-skip-session-tagging: true
 
       - name: Deploy to feature stack in the testing account
@@ -79,8 +79,8 @@ jobs:
           aws-secret-access-key: ${{ env.PIPELINE_USER_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.TESTING_REGION }}
           role-to-assume: ${{ env.TESTING_PIPELINE_EXECUTION_ROLE }}
-          role-duration-seconds: 3600
           role-session-name: testing-packaging
+          role-duration-seconds: 3600
           role-skip-session-tagging: true
 
       - name: Upload artifacts to testing artifact buckets
@@ -104,8 +104,8 @@ jobs:
           aws-secret-access-key: ${{ env.PIPELINE_USER_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.PROD_REGION }}
           role-to-assume: ${{ env.PROD_PIPELINE_EXECUTION_ROLE }}
-          role-duration-seconds: 3600
           role-session-name: prod-packaging
+          role-duration-seconds: 3600
           role-skip-session-tagging: true
 
       - name: Upload artifacts to production artifact buckets
@@ -140,8 +140,8 @@ jobs:
           aws-secret-access-key: ${{ env.PIPELINE_USER_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.TESTING_REGION }}
           role-to-assume: ${{ env.TESTING_PIPELINE_EXECUTION_ROLE }}
-          role-duration-seconds: 3600
           role-session-name: testing-deployment
+          role-duration-seconds: 3600
           role-skip-session-tagging: true
 
       - name: Deploy to testing account
@@ -182,8 +182,8 @@ jobs:
           aws-secret-access-key: ${{ env.PIPELINE_USER_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.PROD_REGION }}
           role-to-assume: ${{ env.PROD_PIPELINE_EXECUTION_ROLE }}
-          role-duration-seconds: 3600
           role-session-name: prod-deployment
+          role-duration-seconds: 3600
           role-skip-session-tagging: true
 
       - name: Deploy to production account

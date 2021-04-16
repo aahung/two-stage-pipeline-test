@@ -90,6 +90,14 @@ Resources:
                 - Name: SourceCodeAsZip
               OutputArtifacts:
                 - Name: BuildArtifactAsZip
+        - Name: Manual
+          Actions:
+            - Name: MyApprovalAction
+              ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Provider: Manual
+                Version: "1"
         - Name: Build2
           Actions:
             - Name: CodeBuild

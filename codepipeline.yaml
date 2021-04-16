@@ -259,7 +259,12 @@ Resources:
       ServiceRole: !GetAtt CodeBuildServiceRole.Arn
       Source:
         Type: CODEPIPELINE
-        BuildSpec: aws-sam-pipeline/buildspec.yml
+        BuildSpec:  |
+          version: 0.2
+          phases:
+            build:
+              commands:
+                - echo hi
   
   CodeBuildProject2:
     Type: AWS::CodeBuild::Project
@@ -277,4 +282,9 @@ Resources:
       ServiceRole: !GetAtt CodeBuildServiceRole.Arn
       Source:
         Type: CODEPIPELINE
-        BuildSpec: aws-sam-pipeline/buildspec2.yml
+        BuildSpec: |
+          version: 0.2
+          phases:
+            build:
+              commands:
+                - echo hi

@@ -90,6 +90,18 @@ Resources:
                 - Name: SourceCodeAsZip
               OutputArtifacts:
                 - Name: BuildArtifactAsZip
+        - Name: BuildAgain
+          Actions:
+            - Name: CodeBuild
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+              InputArtifacts:
+                - Name: SourceCodeAsZip
         - Name: Manual
           Actions:
             - Name: MyApprovalAction

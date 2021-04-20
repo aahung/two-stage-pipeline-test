@@ -276,7 +276,7 @@ Resources:
           phases:
             build:
               commands:
-                - echo hi
+                - aws sts get-caller-identity
   
   CodeBuildProject2:
     Type: AWS::CodeBuild::Project
@@ -299,4 +299,4 @@ Resources:
           phases:
             build:
               commands:
-                - echo hi
+                - aws sts get-caller-identity

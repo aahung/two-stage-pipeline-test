@@ -111,20 +111,20 @@ Resources:
                 - Name: SourceCodeAsZip
               OutputArtifacts:
                 - Name: BuildArtifactAsZip
-        - Name: DeployUsingSam
-          Actions:
-            - Name: CodeBuild
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: "1"
-              Configuration:
-                ProjectName: !Ref CodeBuildProjectDeploy
-              InputArtifacts:
-                - Name: BuildArtifactAsZip
-              OutputArtifacts:
-                - Name: BuildArtifactAsZip2
+        # - Name: DeployUsingSam
+        #   Actions:
+        #     - Name: CodeBuild
+        #       ActionTypeId:
+        #         Category: Build
+        #         Owner: AWS
+        #         Provider: CodeBuild
+        #         Version: "1"
+        #       Configuration:
+        #         ProjectName: !Ref CodeBuildProjectDeploy
+        #       InputArtifacts:
+        #         - Name: BuildArtifactAsZip
+        #       OutputArtifacts:
+        #         - Name: BuildArtifactAsZip2
         - Name: DeployToTest
           Actions:
             - Name: CreateChangeSetTest
@@ -139,10 +139,10 @@ Resources:
                 ActionMode: CHANGE_SET_REPLACE
                 StackName: test-stack
                 Capabilities: CAPABILITY_NAMED_IAM
-                TemplatePath: BuildArtifactAsZip2::packaged-testing.yaml
+                TemplatePath: BuildArtifactAsZip::packaged-testing.yaml
                 RoleArn: !Ref TestCfnRole
               InputArtifacts:
-                - Name: BuildArtifactAsZip2
+                - Name: BuildArtifactAsZip
               RunOrder: 1
               RoleArn: !Ref TestPipExecRole
             - Name: DeployChangeSetTest

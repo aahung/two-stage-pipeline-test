@@ -324,7 +324,7 @@ Resources:
                 - pip install --upgrade pip
                 - pip install awscli aws-sam-cli
                 - sam build
-                - ./assume-role.sh us-east-2 arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP test-package
+                - . ./assume-role.sh us-east-2 arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP test-package
                 - aws sts get-caller-identity
                 - sam package --s3-bucket stage-resource-stack-artifactsbucket-1t96af9pkc631 --region us-east-2 --output-template-file packaged-testing.yaml
           artifacts:

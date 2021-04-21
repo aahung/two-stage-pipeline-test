@@ -78,7 +78,7 @@ Resources:
               RunOrder: 2
         - Name: Build
           Actions:
-            - Name: CodeBuild
+            - Name: BuildIt
               ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -88,8 +88,21 @@ Resources:
                 ProjectName: !Ref CodeBuildProject
               InputArtifacts:
                 - Name: SourceCodeAsZip
-              OutputArtifacts:
-                - Name: BuildArtifactAsZip
+              RunOrder: 1
+              RoleArn: arn:aws:iam::916108123774:role/test-20210420
+            # - Name: CodeBuild
+            #   ActionTypeId:
+            #     Category: Build
+            #     Owner: AWS
+            #     Provider: CodeBuild
+            #     Version: "1"
+            #   Configuration:
+            #     ProjectName: !Ref CodeBuildProject
+            #   InputArtifacts:
+            #     - Name: SourceCodeAsZip
+            #   OutputArtifacts:
+            #     - Name: BuildArtifactAsZip
+            #   RunOrder: 2
         - Name: BuildAgain
           Actions:
             - Name: CodeBuild
@@ -102,14 +115,6 @@ Resources:
                 ProjectName: !Ref CodeBuildProject
               InputArtifacts:
                 - Name: SourceCodeAsZip
-        - Name: Manual
-          Actions:
-            - Name: MyApprovalAction
-              ActionTypeId:
-                Category: Approval
-                Owner: AWS
-                Provider: Manual
-                Version: "1"
         - Name: Build2
           Actions:
             - Name: CodeBuild

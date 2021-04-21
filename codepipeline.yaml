@@ -123,8 +123,10 @@ Resources:
                 Provider: CodeBuild
                 Version: "1"
               Configuration:
+                PrimarySource: SourceCodeAsZip
                 ProjectName: !Ref CodeBuildProjectDeploy
               InputArtifacts:
+                - Name: SourceCodeAsZip
                 - Name: BuildArtifactAsZip
         - Name: DeployToTest
           Actions:
@@ -360,7 +362,6 @@ Resources:
           artifacts:
             files:
               - packaged-testing.yaml
-              - assume-role.sh
   
   CodeBuildProjectDeploy:
     Type: AWS::CodeBuild::Project

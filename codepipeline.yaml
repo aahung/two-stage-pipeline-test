@@ -364,7 +364,7 @@ Resources:
   CodeBuildProjectDeploy:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: CodeBuildProject
+      Name: CodeBuildProjectDeploy
       Artifacts:
         Type: CODEPIPELINE
       Environment:

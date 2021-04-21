@@ -360,6 +360,7 @@ Resources:
           artifacts:
             files:
               - packaged-testing.yaml
+              - assume-role.sh
   
   CodeBuildProjectDeploy:
     Type: AWS::CodeBuild::Project

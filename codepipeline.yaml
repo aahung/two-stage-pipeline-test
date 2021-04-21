@@ -41,6 +41,7 @@ Resources:
             Principal:
               AWS:
                 - !Ref TestPipExecRole
+                - !Ref TestCfnRole
 
   Pipeline:
     Type: AWS::CodePipeline::Pipeline

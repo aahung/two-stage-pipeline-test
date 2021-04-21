@@ -78,33 +78,6 @@ Resources:
               RunOrder: 2
         - Name: Build
           Actions:
-            - Name: BuildSamStack
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: "1"
-              Configuration:
-                ProjectName: !Ref CodeBuildProject
-              InputArtifacts:
-                - Name: SourceCodeAsZip
-              RunOrder: 1
-              RoleArn: arn:aws:iam::916108123774:role/test-20210420
-            # - Name: CodeBuild
-            #   ActionTypeId:
-            #     Category: Build
-            #     Owner: AWS
-            #     Provider: CodeBuild
-            #     Version: "1"
-            #   Configuration:
-            #     ProjectName: !Ref CodeBuildProject
-            #   InputArtifacts:
-            #     - Name: SourceCodeAsZip
-            #   OutputArtifacts:
-            #     - Name: BuildArtifactAsZip
-            #   RunOrder: 2
-        - Name: BuildAgain
-          Actions:
             - Name: CodeBuild
               ActionTypeId:
                 Category: Build
@@ -113,22 +86,10 @@ Resources:
                 Version: "1"
               Configuration:
                 ProjectName: !Ref CodeBuildProject
-              InputArtifacts:
-                - Name: SourceCodeAsZip
-        - Name: Build2
-          Actions:
-            - Name: CodeBuild
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: "1"
-              Configuration:
-                ProjectName: !Ref CodeBuildProject2
               InputArtifacts:
                 - Name: SourceCodeAsZip
               OutputArtifacts:
-                - Name: BuildArtifactAsZip2
+                - Name: BuildArtifactAsZip
 
   CodePipelineExecutionRole:
     Type: AWS::IAM::Role
@@ -323,26 +284,9 @@ Resources:
                 - pip install --upgrade pip
                 - pip install awscli aws-sam-cli
                 - sam build
-  
-  CodeBuildProject2:
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Name: CodeBuildProject2
-      Artifacts:
-        Type: CODEPIPELINE
-      Environment:
-        Type: LINUX_CONTAINER
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/amazonlinux2-x86_64-standard:1.0
-        EnvironmentVariables:
-          - Name: BUILD_OUTPUT_BUCKET
-            Value: !Ref BuildArtifactsBucket
-      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec: |
-          version: 0.2
-          phases:
-            build:
-              commands:
+                - ./assume-role.sh us-east-2 arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP test-package
                 - aws sts get-caller-identity
+                - sam package --s3-bucket stage-resource-stack-artifactsbucket-1t96af9pkc631 --region us-east-2 --output-template-file packaged-testing.yaml
+          artifacts:
+            files:
+              - packaged-testing.yaml

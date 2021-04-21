@@ -280,6 +280,18 @@ Resources:
               - Effect: Allow
                 Action: "ssm:GetParameters"
                 Resource: "*"
+        - PolicyName: AssumeStagePipExecutionRoles
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - sts:AssumeRole
+                Effect: Allow
+                Resource: arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP
+              - Action:
+                  - sts:AssumeRole
+                Effect: Allow
+                Resource: arn:aws:iam::013714286599:role/stack-resource-stack-DeployerRole-1MKUWNLR7G6I9
 
   CodeBuildProject:
     Type: AWS::CodeBuild::Project

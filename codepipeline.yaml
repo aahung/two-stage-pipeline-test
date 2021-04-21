@@ -123,6 +123,8 @@ Resources:
                 ProjectName: !Ref CodeBuildProjectDeploy
               InputArtifacts:
                 - Name: BuildArtifactAsZip
+              OutputArtifacts:
+                - Name: BuildArtifactAsZip
         - Name: DeployToTest
           Actions:
             - Name: CreateChangeSetTest
@@ -390,3 +392,7 @@ Resources:
                 - . ./assume-role.sh us-east-2 arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP test-package
                 - aws sts get-caller-identity
                 - sam deploy --stack-name test-stack --s3-bucket stage-resource-stack-artifactsbucket-1t96af9pkc631 --region us-east-2 --template packaged-testing.yaml --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --role-arn arn:aws:iam::191762412092:role/stage-resource-stack-CFNDeploymentRole-1LHD5N7FSUGB6
+          artifacts:
+            files:
+              - packaged-testing.yaml
+              - assume-role.sh

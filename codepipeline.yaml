@@ -78,7 +78,7 @@ Resources:
               RunOrder: 2
         - Name: Build
           Actions:
-            - Name: BuildIt
+            - Name: BuildSamStack
               ActionTypeId:
                 Category: Build
                 Owner: AWS
@@ -144,6 +144,18 @@ Resources:
                 - codepipeline.amazonaws.com
       Path: /
       Policies:
+        - PolicyName: AssumeStagePipExecutionRoles
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - sts:AssumeRole
+                Effect: Allow
+                Resource: arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP
+              - Action:
+                  - sts:AssumeRole
+                Effect: Allow
+                Resource: arn:aws:iam::013714286599:role/stack-resource-stack-DeployerRole-1MKUWNLR7G6I9
         - PolicyName: CodePipelineAccess
           PolicyDocument:
             Version: "2012-10-17"
@@ -198,6 +210,18 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${PipelineStackName}*/*"
                   - !Sub "arn:aws:cloudformation:${AWS::Region}:aws:transform/Serverless-2016-10-31"
+        - PolicyName: AssumeStagePipExecutionRoles
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - sts:AssumeRole
+                Effect: Allow
+                Resource: arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP
+              - Action:
+                  - sts:AssumeRole
+                Effect: Allow
+                Resource: arn:aws:iam::013714286599:role/stack-resource-stack-DeployerRole-1MKUWNLR7G6I9
                 
   CloudFormationExecutionRole:
     Type: AWS::IAM::Role
@@ -279,9 +303,14 @@ Resources:
         BuildSpec:  |
           version: 0.2
           phases:
+            install:
+              runtime-versions:
+                  python: 3.7
             build:
               commands:
-                - aws sts get-caller-identity
+                - pip install --upgrade pip
+                - pip install awscli aws-sam-cli
+                - sam build
   
   CodeBuildProject2:
     Type: AWS::CodeBuild::Project

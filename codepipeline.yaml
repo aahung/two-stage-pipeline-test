@@ -140,11 +140,10 @@ Resources:
                 StackName: test-stack
                 Capabilities: CAPABILITY_NAMED_IAM
                 TemplatePath: BuildArtifactAsZip::packaged-testing.yaml
-                RoleArn: !Ref TestCfnRole
+                RoleArn: !Ref TestPipExecRole
               InputArtifacts:
                 - Name: BuildArtifactAsZip
               RunOrder: 1
-              RoleArn: !Ref TestPipExecRole
             - Name: DeployChangeSetTest
               Region: us-east-2
               ActionTypeId:

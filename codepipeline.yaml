@@ -2,9 +2,6 @@ AWSTemplateFormatVersion : '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
 Parameters:
-  PipelineStackName:
-    Type: String
-    Default: codepipeline-pipeline-stack
   TestPipExecRole:
     Type: String
     Default: arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP
@@ -79,8 +76,8 @@ Resources:
               Configuration:
                 ActionMode: CHANGE_SET_REPLACE
                 RoleArn: !GetAtt CloudFormationExecutionRole.Arn
-                StackName: !Ref PipelineStackName
-                ChangeSetName: !Sub ${PipelineStackName}-ChangeSet
+                StackName: !Ref AWS::StackName
+                ChangeSetName: !Sub ${AWS::StackName}-ChangeSet
                 TemplatePath: SourceCodeAsZip::codepipeline.yaml
                 Capabilities: CAPABILITY_NAMED_IAM
               InputArtifacts:
@@ -95,10 +92,10 @@ Resources:
               Configuration:
                 ActionMode: CHANGE_SET_EXECUTE
                 RoleArn: !GetAtt CloudFormationExecutionRole.Arn
-                StackName: !Ref PipelineStackName
-                ChangeSetName: !Sub ${PipelineStackName}-ChangeSet
+                StackName: !Ref AWS::StackName
+                ChangeSetName: !Sub ${AWS::StackName}-ChangeSet
               OutputArtifacts:
-                - Name: !Sub ${PipelineStackName}ChangeSet
+                - Name: !Sub ${AWS::StackName}ChangeSet
               RunOrder: 2
         - Name: Build
           Actions:
@@ -239,7 +236,7 @@ Resources:
                   - "cloudformation:SetStackPolicy"
                   - "cloudformation:ValidateTemplate"
                 Resource:
-                  - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${PipelineStackName}*/*"
+                  - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}*/*"
                   - !Sub "arn:aws:cloudformation:${AWS::Region}:aws:transform/Serverless-2016-10-31"
         - PolicyName: AssumeStagePipExecutionRoles
           PolicyDocument:

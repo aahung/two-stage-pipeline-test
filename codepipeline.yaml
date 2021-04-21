@@ -130,16 +130,19 @@ Resources:
             - Name: CreateChangeSetTest
               Region: us-east-2
               ActionTypeId:
-                Category: Build
+                Category: Deploy
                 Owner: AWS
-                Provider: CodeBuild
-                Version: "1"
+                Version: '1'
+                Provider: CloudFormation
               Configuration:
-                ProjectName: !Ref CodeBuildProjectDeploy
+                ChangeSetName: sample-lambda-test
+                ActionMode: CHANGE_SET_REPLACE
+                StackName: test-stack
+                Capabilities: CAPABILITY_NAMED_IAM
+                TemplatePath: BuildArtifactAsZip::packaged-testing.yaml
+                RoleArn: !Ref TestCfnRole
               InputArtifacts:
                 - Name: BuildArtifactAsZip
-              OutputArtifacts:
-                - Name: BuildArtifactAsZip2
               RunOrder: 1
               RoleArn: !Ref TestPipExecRole
             - Name: DeployChangeSetTest

@@ -114,6 +114,18 @@ Resources:
                 - Name: SourceCodeAsZip
               OutputArtifacts:
                 - Name: BuildArtifactAsZip
+        - Name: DeployUsingSam
+          Actions:
+            - Name: CodeBuild
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectDeploy
+              InputArtifacts:
+                - Name: BuildArtifactAsZip
         - Name: DeployToTest
           Actions:
             - Name: CreateChangeSetTest
@@ -344,7 +356,37 @@ Resources:
                 - sam build
                 - . ./assume-role.sh us-east-2 arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP test-package
                 - aws sts get-caller-identity
-                - sam package --s3-bucket stage-resource-stack-artifactsbucket-1t96af9pkc631 --region us-east-2 --output-template-file packaged-testing.yaml
+                - sam package --s3-bucket stage-resource-stack-artifactsbucket-1t96af9pkc631 --region us-east-2 --output-template-file packaged-testing.yaml 
           artifacts:
             files:
               - packaged-testing.yaml
+  
+  CodeBuildProjectDeploy:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: CodeBuildProject
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:1.0
+      Cache:
+        Type: S3
+        Location: !Sub ${BuildArtifactsBucket}/codebuild-cache
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec:  |
+          version: 0.2
+          phases:
+            install:
+              runtime-versions:
+                  python: 3.7
+            build:
+              commands:
+                - pip install --upgrade pip
+                - pip install awscli aws-sam-cli
+                - . ./assume-role.sh us-east-2 arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP test-package
+                - aws sts get-caller-identity
+                - sam deploy --stack-name test-stack --s3-bucket stage-resource-stack-artifactsbucket-1t96af9pkc631 --region us-east-2 --template packaged-testing.yaml --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --role-arn arn:aws:iam::191762412092:role/stage-resource-stack-CFNDeploymentRole-1LHD5N7FSUGB6

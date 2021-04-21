@@ -24,6 +24,23 @@ Resources:
         Status: Enabled
     UpdateReplacePolicy: Retain
     DeletionPolicy: Retain
+  
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref BuildArtifactsBucket
+      PolicyDocument:
+        Statement:
+          -
+            Action:
+              - s3:*
+            Effect: Allow
+            Resource:
+              - !Sub arn:aws:s3:::${BuildArtifactsBucket}
+              - !Sub arn:aws:s3:::${BuildArtifactsBucket}/*
+            Principal:
+              AWS:
+                - !Ref TestPipExecRole
 
   Pipeline:
     Type: AWS::CodePipeline::Pipeline

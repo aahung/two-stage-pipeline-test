@@ -124,7 +124,7 @@ Resources:
               InputArtifacts:
                 - Name: BuildArtifactAsZip
               OutputArtifacts:
-                - Name: BuildArtifactAsZip
+                - Name: BuildArtifactAsZip2
         - Name: DeployToTest
           Actions:
             - Name: CreateChangeSetTest
@@ -139,10 +139,10 @@ Resources:
                 ActionMode: CHANGE_SET_REPLACE
                 StackName: test-stack
                 Capabilities: CAPABILITY_NAMED_IAM
-                TemplatePath: BuildArtifactAsZip::packaged-testing.yaml
+                TemplatePath: BuildArtifactAsZip2::packaged-testing.yaml
                 RoleArn: !Ref TestCfnRole
               InputArtifacts:
-                - Name: BuildArtifactAsZip
+                - Name: BuildArtifactAsZip2
               RunOrder: 1
               RoleArn: !Ref TestPipExecRole
             - Name: DeployChangeSetTest

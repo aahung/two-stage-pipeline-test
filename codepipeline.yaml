@@ -5,6 +5,12 @@ Parameters:
   PipelineStackName:
     Type: String
     Default: codepipeline-pipeline-stack
+  TestPipExecRole:
+    Type: String
+    Default: arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP
+  TestCfnRole:
+    Type: String
+    Default: arn:aws:iam::191762412092:role/stage-resource-stack-CFNDeploymentRole-1LHD5N7FSUGB6
 
 Resources:
   BuildArtifactsBucket:
@@ -90,6 +96,40 @@ Resources:
                 - Name: SourceCodeAsZip
               OutputArtifacts:
                 - Name: BuildArtifactAsZip
+        - Name: DeployToTest
+          Actions:
+            - Name: CreateChangeSetTest
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: '1'
+                Provider: CloudFormation
+              Configuration:
+                ChangeSetName: sample-lambda-test
+                ActionMode: CHANGE_SET_REPLACE
+                StackName: test-stack
+                Capabilities: CAPABILITY_NAMED_IAM
+                TemplatePath: BuildArtifactAsZip::packaged-testing.yaml
+                RoleArn: !Ref TestCfnRole
+              InputArtifacts:
+                - Name: BuildArtifactAsZip
+              RunOrder: 1
+              RoleArn: !Ref TestPipExecRole
+            - Name: DeployChangeSetTest
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: '1'
+                Provider: CloudFormation
+              Configuration:
+                ChangeSetName: sample-lambda-test
+                ActionMode: CHANGE_SET_EXECUTE
+                StackName: test-stack
+                RoleArn: !Ref TestCfnRole
+              InputArtifacts:
+                - Name: BuildArtifactAsZip
+              RunOrder: 2
+              RoleArn: !Ref TestPipExecRole
 
   CodePipelineExecutionRole:
     Type: AWS::IAM::Role

@@ -1,67 +1,55 @@
 AWSTemplateFormatVersion : '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
 
 Parameters:
+  FullRepositoryId:
+    Type: String
+    Default: "aahung/two-stage-pipeline-test"
+  MainGitBranch:
+    Type: String
+    Default: "main"
   TestRegion:
     Type: String
-    Default: us-west-2
+    Default: "us-west-2"
   ProdRegion:
     Type: String
-    Default: us-east-2
+    Default: "us-east-2"
   TestStackName:
     Type: String
-    Default: test-20210610
+    Default: "test-20210610"
   ProdStackName:
     Type: String
-    Default: prod-20210610
-  TestPipeExeRole:
+    Default: "prod-20210610"
+  TestPipelineExecutionRole:
     Type: String
-    Default: arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-pip-PipelineExecutionRole-15S4EKYWRQFHC
-  ProdPipeExeRole:
+    Default: "arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-pip-PipelineExecutionRole-15S4EKYWRQFHC"
+  ProdPipelineExecutionRole:
     Type: String
-    Default: arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-pip-PipelineExecutionRole-1RCT06Q0X5RFV
-  TestCFNExeRole:
+    Default: "arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-pip-PipelineExecutionRole-1RCT06Q0X5RFV"
+  TestCloudFormationExecutionRole:
     Type: String
-    Default: arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-CloudFormationExecutionR-GGBB1BXWMPG1
-  ProdCFNExeRole:
+    Default: "arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-CloudFormationExecutionR-GGBB1BXWMPG1"
+  ProdCloudFormationExecutionExeRole:
     Type: String
-    Default: arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-CloudFormationExecutionR-I3R8W59IZOCR
+    Default: "arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-CloudFormationExecutionR-I3R8W59IZOCR"
   TestArtifactBucket:
     Type: String
-    Default: aws-sam-cli-managed-test-pipeline-artifactsbucket-1pbwfwjs3ylo8
+    Default: "aws-sam-cli-managed-test-pipeline-artifactsbucket-1pbwfwjs3ylo8"
   ProdArtifactBucket:
     Type: String
-    Default: aws-sam-cli-managed-prod-pipeline-artifactsbucket-1gq7al2xjqqfc
+    Default: "aws-sam-cli-managed-prod-pipeline-artifactsbucket-1gq7al2xjqqfc"
+  TestImageRepository:
+    Type: String
+    Default: ""
+  ProdImageRepository:
+    Type: String
+    Default: ""
 
 Resources:
-  PipelineArtifactsBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              SSEAlgorithm: AES256
-      VersioningConfiguration:
-        Status: Enabled
-    UpdateReplacePolicy: Retain
-    DeletionPolicy: Retain
-  
-  PipelineArtifactsBucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref PipelineArtifactsBucket
-      PolicyDocument:
-        Statement:
-          -
-            Action:
-              - s3:*
-            Effect: Allow
-            Resource:
-              - !Sub arn:aws:s3:::${PipelineArtifactsBucket}
-              - !Sub arn:aws:s3:::${PipelineArtifactsBucket}/*
-            Principal:
-              AWS:
-                - !GetAtt CodePipelineExecutionRole.Arn
+  CodeStarConnection:
+    Type: AWS::CodeStarConnections::Connection
+    Properties: 
+      ConnectionName: GitRepositoryConnection
+      ProviderType: "GitHub"
 
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -77,14 +65,13 @@ Resources:
             - Name: SourceCodeRepo
               ActionTypeId:
                 Category: Source
-                Owner: ThirdParty
-                Provider: GitHub
+                Owner: AWS
+                Provider: CodeStarSourceConnection
                 Version: "1"
               Configuration:
-                Owner: aahung
-                Repo: two-stage-pipeline-test
-                Branch: main
-                OAuthToken: "{{resolve:secretsmanager:dummygithubtoken}}"
+                ConnectionArn: !Ref CodeStarConnection
+                FullRepositoryId: !Ref FullRepositoryId
+                BranchName: !Ref MainGitBranch
               OutputArtifacts:
                 - Name: SourceCodeAsZip
               RunOrder: 1
@@ -144,7 +131,7 @@ Resources:
                 Version: "1"
               Configuration:
                 ProjectName: !Ref CodeBuildProjectDeploy
-                EnvironmentVariables: !Sub '[{"name": "STAGE_TEMPLATE", "value": "packaged-test.yaml"}, {"name": "STAGE_REGION", "value": "${TestRegion}"}, {"name": "STAGE_STACK_NAME", "value": "${TestStackName}"}, {"name": "STAGE_PIPEXE_ROLE", "value": "${TestPipeExeRole}"}, {"name": "STAGE_CFNEXE_ROLE", "value": "${TestCFNExeRole}"}, {"name": "STAGE_BUCKET", "value": "${TestArtifactBucket}"}]'
+                EnvironmentVariables: !Sub '[{"name": "STAGE_TEMPLATE", "value": "packaged-test.yaml"}, {"name": "STAGE_REGION", "value": "${TestRegion}"}, {"name": "STAGE_STACK_NAME", "value": "${TestStackName}"}, {"name": "STAGE_PIPELINE_EXECUTION_ROLE", "value": "${TestPipelineExecutionRole}"}, {"name": "STAGE_CLOUDFORMATION_EXECUTION_ROLE", "value": "${TestCloudFormationExecutionRole}"}, {"name": "STAGE_BUCKET", "value": "${TestArtifactBucket}"}]'
               InputArtifacts:
                 - Name: BuildArtifactAsZip
         - Name: DeployProd
@@ -157,9 +144,38 @@ Resources:
                 Version: "1"
               Configuration:
                 ProjectName: !Ref CodeBuildProjectDeploy
-                EnvironmentVariables: !Sub '[{"name": "STAGE_TEMPLATE", "value": "packaged-prod.yaml"}, {"name": "STAGE_REGION", "value": "${ProdRegion}"}, {"name": "STAGE_STACK_NAME", "value": "${ProdStackName}"}, {"name": "STAGE_PIPEXE_ROLE", "value": "${ProdPipeExeRole}"}, {"name": "STAGE_CFNEXE_ROLE", "value": "${ProdCFNExeRole}"}, {"name": "STAGE_BUCKET", "value": "${ProdArtifactBucket}"}]'
+                EnvironmentVariables: !Sub '[{"name": "STAGE_TEMPLATE", "value": "packaged-prod.yaml"}, {"name": "STAGE_REGION", "value": "${ProdRegion}"}, {"name": "STAGE_STACK_NAME", "value": "${ProdStackName}"}, {"name": "STAGE_PIPELINE_EXECUTION_ROLE", "value": "${ProdPipelineExecutionRole}"}, {"name": "STAGE_CLOUDFORMATION_EXECUTION_ROLE", "value": "${ProdCloudFormationExecutionExeRole}"}, {"name": "STAGE_BUCKET", "value": "${ProdArtifactBucket}"}]'
               InputArtifacts:
                 - Name: BuildArtifactAsZip
+
+  PipelineArtifactsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+  
+  PipelineArtifactsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref PipelineArtifactsBucket
+      PolicyDocument:
+        Statement:
+          -
+            Action:
+              - s3:*
+            Effect: Allow
+            Resource:
+              - !Sub arn:aws:s3:::${PipelineArtifactsBucket}
+              - !Sub arn:aws:s3:::${PipelineArtifactsBucket}/*
+            Principal:
+              AWS:
+                - !GetAtt CodePipelineExecutionRole.Arn
 
   CodePipelineExecutionRole:
     Type: AWS::IAM::Role
@@ -183,6 +199,14 @@ Resources:
                 Action:
                   - "iam:PassRole"
                 Resource: "*"
+        - PolicyName: CodeStarConnectionAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "codestar-connections:UseConnection"
+                Resource: !Ref CodeStarConnection
         - PolicyName: CodePipelineCodeAndS3Bucket
           PolicyDocument:
             Version: "2012-10-17"
@@ -228,7 +252,6 @@ Resources:
                   - "cloudformation:ValidateTemplate"
                 Resource:
                   - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}*/*"
-                  - !Sub "arn:aws:cloudformation:${AWS::Region}:aws:transform/Serverless-2016-10-31"
                 
   PipelineStackCloudFormationExecutionRole:
     Type: AWS::IAM::Role
@@ -310,14 +333,18 @@ Resources:
             Value: !Ref TestRegion
           - Name: PROD_REGION
             Value: !Ref ProdRegion
-          - Name: TEST_PIPEXE_ROLE
-            Value: !Ref TestPipeExeRole
-          - Name: PROD_PIPEXE_ROLE
-            Value: !Ref ProdPipeExeRole
+          - Name: TEST_PIPELINE_EXECUTION_ROLE
+            Value: !Ref TestPipelineExecutionRole
+          - Name: PROD_PIPELINE_EXECUTION_ROLE
+            Value: !Ref ProdPipelineExecutionRole
           - Name: TEST_ARTIFACT_BUCKET
             Value: !Ref TestArtifactBucket
           - Name: PROD_ARTIFACT_BUCKET
             Value: !Ref ProdArtifactBucket
+          - Name: TEST_IMAGE_REPOSITORY
+            Value: !Ref TestImageRepository
+          - Name: PROD_IMAGE_REPOSITORY
+            Value: !Ref ProdImageRepository
       Cache:
         Type: S3
         Location: !Sub ${PipelineArtifactsBucket}/codebuild-cache
@@ -335,17 +362,19 @@ Resources:
                 - pip install --upgrade pip
                 - pip install awscli aws-sam-cli
                 - sam build
-                - . ./assume-role-codepipeline.sh ${TEST_REGION} ${TEST_PIPEXE_ROLE} test-package
-                - aws sts get-caller-identity
-                - sam package --s3-bucket ${TEST_ARTIFACT_BUCKET} --region ${TEST_REGION} --output-template-file packaged-test.yaml
-                - . ./assume-role-codepipeline.sh ${PROD_REGION} ${PROD_PIPEXE_ROLE} prod-package
-                - aws sts get-caller-identity
-                - sam package --s3-bucket ${PROD_ARTIFACT_BUCKET} --region ${PROD_REGION} --output-template-file packaged-prod.yaml
+                - . ./assume-role.sh ${TEST_REGION} ${TEST_PIPELINE_EXECUTION_ROLE} test-package
+                - sam package --s3-bucket ${TEST_ARTIFACT_BUCKET}
+                              --region ${TEST_REGION}
+                              --output-template-file packaged-test.yaml
+                - . ./assume-role.sh ${PROD_REGION} ${PROD_PIPELINE_EXECUTION_ROLE} prod-package
+                - sam package --s3-bucket ${PROD_ARTIFACT_BUCKET} 
+                              --region ${PROD_REGION}
+                              --output-template-file packaged-prod.yaml
           artifacts:
             files:
               - packaged-test.yaml
               - packaged-prod.yaml
-              - assume-role-codepipeline.sh
+              - assume-role.sh
   
   CodeBuildProjectDeploy:
     Type: AWS::CodeBuild::Project
@@ -372,6 +401,11 @@ Resources:
               commands:
                 - pip install --upgrade pip
                 - pip install awscli aws-sam-cli
-                - . ./assume-role-codepipeline.sh ${STAGE_REGION} ${STAGE_PIPEXE_ROLE} deploy
-                - aws sts get-caller-identity
-                - sam deploy --stack-name ${STAGE_STACK_NAME} --s3-bucket ${STAGE_BUCKET} --region ${STAGE_REGION} --template ${STAGE_TEMPLATE} --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --role-arn ${STAGE_CFNEXE_ROLE}
+                - . ./assume-role.sh ${STAGE_REGION} ${STAGE_PIPELINE_EXECUTION_ROLE} deploy
+                - sam deploy --stack-name ${STAGE_STACK_NAME} 
+                             --template ${STAGE_TEMPLATE}
+                             --capabilities CAPABILITY_IAM
+                             --region ${STAGE_REGION}
+                             --s3-bucket ${STAGE_BUCKET}
+                             --no-fail-on-empty-changeset
+                             --role-arn ${STAGE_CLOUDFORMATION_EXECUTION_ROLE}

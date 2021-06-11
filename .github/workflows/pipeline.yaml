@@ -10,17 +10,23 @@ env:
   PIPELINE_USER_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   PIPELINE_USER_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   SAM_TEMPLATE: template.yaml
-  TESTING_STACK_NAME: test-stack
-  TESTING_PIPELINE_EXECUTION_ROLE: arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP
-  TESTING_CLOUDFORMATION_EXECUTION_ROLE: arn:aws:iam::191762412092:role/stage-resource-stack-CFNDeploymentRole-1LHD5N7FSUGB6
-  TESTING_ARTIFACTS_BUCKET: stage-resource-stack-artifactsbucket-1t96af9pkc631
-  TESTING_ECR_REPO: 191762412092.dkr.ecr.us-east-2.amazonaws.com/test
-  TESTING_REGION: us-east-2
-  PROD_STACK_NAME: prod-stack
-  PROD_PIPELINE_EXECUTION_ROLE: arn:aws:iam::013714286599:role/stack-resource-stack-DeployerRole-1MKUWNLR7G6I9
-  PROD_CLOUDFORMATION_EXECUTION_ROLE: arn:aws:iam::013714286599:role/stack-resource-stack-CFNDeploymentRole-1UHQLSY8D9LY1
-  PROD_ARTIFACTS_BUCKET: stack-resource-stack-artifactsbucket-1tecc3mhymec7
-  PROD_ECR_REPO: 013714286599.dkr.ecr.us-east-2.amazonaws.com/test
+  TESTING_STACK_NAME: test-20210610
+  TESTING_PIPELINE_EXECUTION_ROLE: arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-pip-PipelineExecutionRole-15S4EKYWRQFHC
+  TESTING_CLOUDFORMATION_EXECUTION_ROLE: arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-CloudFormationExecutionR-GGBB1BXWMPG1
+  TESTING_ARTIFACTS_BUCKET: aws-sam-cli-managed-test-pipeline-artifactsbucket-1pbwfwjs3ylo8
+  // If there are functions with "Image" PackageType in your template,
+  // uncomment the line below and add "--image-repository ${TESTING_IMAGE_REPOSITORY}" to
+  // testing "sam package" and "sam deploy" commands.
+  // TESTING_IMAGE_REPOSITORY = '0123456789.dkr.ecr.region.amazonaws.com/repository-name'
+  TESTING_REGION: us-west-2
+  PROD_STACK_NAME: prod-20210610
+  PROD_PIPELINE_EXECUTION_ROLE: arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-pip-PipelineExecutionRole-1RCT06Q0X5RFV
+  PROD_CLOUDFORMATION_EXECUTION_ROLE: arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-CloudFormationExecutionR-I3R8W59IZOCR
+  PROD_ARTIFACTS_BUCKET: aws-sam-cli-managed-prod-pipeline-artifactsbucket-1gq7al2xjqqfc
+  // If there are functions with "Image" PackageType in your template,
+  // uncomment the line below and add "--image-repository ${PROD_IMAGE_REPOSITORY}" to
+  // prod "sam package" and "sam deploy" commands.
+  // PROD_IMAGE_REPOSITORY = '0123456789.dkr.ecr.region.amazonaws.com/repository-name'
   PROD_REGION: us-east-2
 
 jobs:
@@ -55,12 +61,12 @@ jobs:
           role-skip-session-tagging: true
 
       - name: Deploy to feature stack in the testing account
+        shell: bash
         run: |
           sam deploy --stack-name $(echo ${GITHUB_REF##*/} | tr -cd '[a-zA-Z0-9-]') \
             --capabilities CAPABILITY_IAM \
             --region ${TESTING_REGION} \
             --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
-            --image-repository ${TESTING_ECR_REPO} \
             --no-fail-on-empty-changeset \
             --role-arn ${TESTING_CLOUDFORMATION_EXECUTION_ROLE}
   
@@ -91,7 +97,6 @@ jobs:
         run: |
           sam package \
             --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
-            --image-repository ${TESTING_ECR_REPO} \
             --region ${TESTING_REGION} \
             --output-template-file packaged-testing.yaml
 
@@ -116,7 +121,6 @@ jobs:
         run: |
           sam package \
             --s3-bucket ${PROD_ARTIFACTS_BUCKET} \
-            --image-repository ${PROD_ECR_REPO} \
             --region ${PROD_REGION} \
             --output-template-file packaged-prod.yaml
 
@@ -156,7 +160,6 @@ jobs:
             --capabilities CAPABILITY_IAM \
             --region ${TESTING_REGION} \
             --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
-            --image-repository ${TESTING_ECR_REPO} \
             --no-fail-on-empty-changeset \
             --role-arn ${TESTING_CLOUDFORMATION_EXECUTION_ROLE}
   
@@ -199,6 +202,5 @@ jobs:
             --capabilities CAPABILITY_IAM \
             --region ${PROD_REGION} \
             --s3-bucket ${PROD_ARTIFACTS_BUCKET} \
-            --image-repository ${PROD_ECR_REPO} \
             --no-fail-on-empty-changeset \
             --role-arn ${PROD_CLOUDFORMATION_EXECUTION_ROLE}

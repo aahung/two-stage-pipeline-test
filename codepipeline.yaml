@@ -2,9 +2,6 @@ AWSTemplateFormatVersion : '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
 Parameters:
-  PipelineRole:
-    Type: String
-    Default: arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-pipeline-res-PipelineRole-SLCNVQ3N5OJB
   TestRegion:
     Type: String
     Default: us-west-2
@@ -137,7 +134,7 @@ Resources:
                 - Name: SourceCodeAsZip
               OutputArtifacts:
                 - Name: BuildArtifactAsZip
-        - Name: Deploy
+        - Name: DeployTest
           Actions:
             - Name: DeployTest
               ActionTypeId:
@@ -150,6 +147,8 @@ Resources:
                 EnvironmentVariables: !Sub '[{"name": "STAGE_TEMPLATE", "value": "packaged-test.yaml"}, {"name": "STAGE_REGION", "value": "${TestRegion}"}, {"name": "STAGE_STACK_NAME", "value": "${TestStackName}"}, {"name": "STAGE_PIPEXE_ROLE", "value": "${TestPipeExeRole}"}, {"name": "STAGE_CFNEXE_ROLE", "value": "${TestCFNExeRole}"}, {"name": "STAGE_BUCKET", "value": "${TestArtifactBucket}"}]'
               InputArtifacts:
                 - Name: BuildArtifactAsZip
+        - Name: DeployProd
+          Actions:
             - Name: DeployProd
               ActionTypeId:
                 Category: Build
@@ -307,8 +306,6 @@ Resources:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/amazonlinux2-x86_64-standard:1.0
         EnvironmentVariables:
-          - Name: PIPELINE_ROLE
-            Value: !Ref PipelineRole
           - Name: TEST_REGION
             Value: !Ref TestRegion
           - Name: PROD_REGION
@@ -338,10 +335,10 @@ Resources:
                 - pip install --upgrade pip
                 - pip install awscli aws-sam-cli
                 - sam build
-                - . ./assume-role-codepipeline.sh ${TEST_REGION} ${PIPELINE_ROLE} ${TEST_PIPEXE_ROLE} test-package
+                - . ./assume-role-codepipeline.sh ${TEST_REGION} ${TEST_PIPEXE_ROLE} test-package
                 - aws sts get-caller-identity
                 - sam package --s3-bucket ${TEST_ARTIFACT_BUCKET} --region ${TEST_REGION} --output-template-file packaged-test.yaml
-                - . ./assume-role-codepipeline.sh ${PROD_REGION} ${PIPELINE_ROLE} ${PROD_PIPEXE_ROLE} prod-package
+                - . ./assume-role-codepipeline.sh ${PROD_REGION} ${PROD_PIPEXE_ROLE} prod-package
                 - aws sts get-caller-identity
                 - sam package --s3-bucket ${PROD_ARTIFACT_BUCKET} --region ${PROD_REGION} --output-template-file packaged-prod.yaml
           artifacts:
@@ -359,9 +356,6 @@ Resources:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/amazonlinux2-x86_64-standard:1.0
-        EnvironmentVariables:
-          - Name: PIPELINE_ROLE
-            Value: !Ref PipelineRole
       Cache:
         Type: S3
         Location: !Sub ${PipelineArtifactsBucket}/codebuild-cache
@@ -378,6 +372,6 @@ Resources:
               commands:
                 - pip install --upgrade pip
                 - pip install awscli aws-sam-cli
-                - . ./assume-role-codepipeline.sh ${STAGE_REGION} ${PIPELINE_ROLE} ${STAGE_PIPEXE_ROLE} deploy
+                - . ./assume-role-codepipeline.sh ${STAGE_REGION} ${STAGE_PIPEXE_ROLE} deploy
                 - aws sts get-caller-identity
                 - sam deploy --stack-name ${STAGE_STACK_NAME} --s3-bucket ${STAGE_BUCKET} --region ${STAGE_REGION} --template ${STAGE_TEMPLATE} --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --role-arn ${STAGE_CFNEXE_ROLE}

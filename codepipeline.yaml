@@ -367,6 +367,7 @@ Resources:
                 Resource: "*"
   
   CodeBuildProjectBuildAndDeployFeature:
+    Condition: IsFeatureBranchPipeline
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
@@ -414,6 +415,7 @@ Resources:
                              --role-arn ${STAGE_CLOUDFORMATION_EXECUTION_ROLE}
 
   CodeBuildProjectBuildAndPackage:
+    Condition: IsMainBranchPipeline
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
@@ -473,6 +475,7 @@ Resources:
               - assume-role.sh
   
   CodeBuildProjectDeploy:
+    Condition: IsMainBranchPipeline
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:

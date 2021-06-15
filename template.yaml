@@ -9,6 +9,8 @@ Resources:
       Runtime: python3.7
       CodeUri: src
       Timeout: 600
+      # testing whether "Environment: ~" is valid
+      Environment: ~
 
   # ImageFunction:
   #   Type: AWS::Serverless::Function

@@ -3,7 +3,7 @@ AWSTemplateFormatVersion : '2010-09-09'
 Parameters:
   CodeStarConnectionProviderType:
     Type: String
-    Default: "Bitbucket"
+    Default: "GitHub"
   FullRepositoryId:
     Type: String
     Default: "aahung/two-stage-pipeline-test"

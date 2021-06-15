@@ -129,7 +129,7 @@ Resources:
 
         - !If
           - IsFeatureBranchPipeline
-          - Name: BuildAndPackage
+          - Name: BuildAndDeployFeatureStack
             Actions:
               - Name: CodeBuild
                 ActionTypeId:
@@ -138,7 +138,7 @@ Resources:
                   Provider: CodeBuild
                   Version: "1"
                 Configuration:
-                  ProjectName: !Ref CodeBuildProjectBuildAndPackage
+                  ProjectName: !Ref CodeBuildProjectBuildAndDeployFeature
                 InputArtifacts:
                   - Name: SourceCodeAsZip
           - !Ref AWS::NoValue

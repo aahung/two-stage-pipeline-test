@@ -1,12 +1,18 @@
 AWSTemplateFormatVersion : '2010-09-09'
 
 Parameters:
+  CodeStarConnectionProviderType:
+    Type: String
+    Default: "Bitbucket"
   FullRepositoryId:
     Type: String
     Default: "aahung/two-stage-pipeline-test"
   MainGitBranch:
     Type: String
     Default: "main"
+  SamTemplate:
+    Type: String
+    Default: "template.yaml"
   TestRegion:
     Type: String
     Default: "us-west-2"
@@ -43,13 +49,26 @@ Parameters:
   ProdImageRepository:
     Type: String
     Default: ""
+  # CodeStarConnectionArn and FeatureGitBranch are required for pipelines for feature branches
+  CodeStarConnectionArn:
+    Type: String
+    Default: ""
+  FeatureGitBranch:
+    Type: String
+    Default: ""
+
+Conditions:
+  IsMainBranchPipeline: !Equals [!Ref FeatureGitBranch, ""]
+  IsFeatureBranchPipeline: !Not [Condition: IsMainBranchPipeline]
+  CreateConnection: !Equals [!Ref CodeStarConnectionArn, ""]
 
 Resources:
   CodeStarConnection:
+    Condition: CreateConnection
     Type: AWS::CodeStarConnections::Connection
     Properties: 
       ConnectionName: GitRepositoryConnection
-      ProviderType: "GitHub"
+      ProviderType: !Ref CodeStarConnectionProviderType
 
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -69,9 +88,9 @@ Resources:
                 Provider: CodeStarSourceConnection
                 Version: "1"
               Configuration:
-                ConnectionArn: !Ref CodeStarConnection
+                ConnectionArn: !If [CreateConnection, !Ref CodeStarConnection, !Ref CodeStarConnectionArn]
                 FullRepositoryId: !Ref FullRepositoryId
-                BranchName: !Ref MainGitBranch
+                BranchName: !If [IsFeatureBranchPipeline, !Ref FeatureGitBranch, !Ref MainGitBranch]
               OutputArtifacts:
                 - Name: SourceCodeAsZip
               RunOrder: 1
@@ -107,46 +126,74 @@ Resources:
               OutputArtifacts:
                 - Name: !Sub ${AWS::StackName}ChangeSet
               RunOrder: 2
-        - Name: BuildAndPackage
-          Actions:
-            - Name: CodeBuild
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: "1"
-              Configuration:
-                ProjectName: !Ref CodeBuildProjectBuildAndPackage
-              InputArtifacts:
-                - Name: SourceCodeAsZip
-              OutputArtifacts:
-                - Name: BuildArtifactAsZip
-        - Name: DeployTest
-          Actions:
-            - Name: DeployTest
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: "1"
-              Configuration:
-                ProjectName: !Ref CodeBuildProjectDeploy
-                EnvironmentVariables: !Sub '[{"name": "STAGE_TEMPLATE", "value": "packaged-test.yaml"}, {"name": "STAGE_REGION", "value": "${TestRegion}"}, {"name": "STAGE_STACK_NAME", "value": "${TestStackName}"}, {"name": "STAGE_PIPELINE_EXECUTION_ROLE", "value": "${TestPipelineExecutionRole}"}, {"name": "STAGE_CLOUDFORMATION_EXECUTION_ROLE", "value": "${TestCloudFormationExecutionRole}"}, {"name": "STAGE_BUCKET", "value": "${TestArtifactBucket}"}]'
-              InputArtifacts:
-                - Name: BuildArtifactAsZip
-        - Name: DeployProd
-          Actions:
-            - Name: DeployProd
-              ActionTypeId:
-                Category: Build
-                Owner: AWS
-                Provider: CodeBuild
-                Version: "1"
-              Configuration:
-                ProjectName: !Ref CodeBuildProjectDeploy
-                EnvironmentVariables: !Sub '[{"name": "STAGE_TEMPLATE", "value": "packaged-prod.yaml"}, {"name": "STAGE_REGION", "value": "${ProdRegion}"}, {"name": "STAGE_STACK_NAME", "value": "${ProdStackName}"}, {"name": "STAGE_PIPELINE_EXECUTION_ROLE", "value": "${ProdPipelineExecutionRole}"}, {"name": "STAGE_CLOUDFORMATION_EXECUTION_ROLE", "value": "${ProdCloudFormationExecutionExeRole}"}, {"name": "STAGE_BUCKET", "value": "${ProdArtifactBucket}"}]'
-              InputArtifacts:
-                - Name: BuildArtifactAsZip
+
+        - !If
+          - IsFeatureBranchPipeline
+          - Name: BuildAndPackage
+            Actions:
+              - Name: CodeBuild
+                ActionTypeId:
+                  Category: Build
+                  Owner: AWS
+                  Provider: CodeBuild
+                  Version: "1"
+                Configuration:
+                  ProjectName: !Ref CodeBuildProjectBuildAndPackage
+                InputArtifacts:
+                  - Name: SourceCodeAsZip
+          - !Ref AWS::NoValue
+
+        - !If
+          - IsMainBranchPipeline
+          - Name: BuildAndPackage
+            Actions:
+              - Name: CodeBuild
+                ActionTypeId:
+                  Category: Build
+                  Owner: AWS
+                  Provider: CodeBuild
+                  Version: "1"
+                Configuration:
+                  ProjectName: !Ref CodeBuildProjectBuildAndPackage
+                InputArtifacts:
+                  - Name: SourceCodeAsZip
+                OutputArtifacts:
+                  - Name: BuildArtifactAsZip
+          - !Ref AWS::NoValue
+        
+        - !If
+          - IsMainBranchPipeline
+          - Name: DeployTest
+            Actions:
+              - Name: DeployTest
+                ActionTypeId:
+                  Category: Build
+                  Owner: AWS
+                  Provider: CodeBuild
+                  Version: "1"
+                Configuration:
+                  ProjectName: !Ref CodeBuildProjectDeploy
+                  EnvironmentVariables: !Sub '[{"name": "STAGE_TEMPLATE", "value": "packaged-test.yaml"}, {"name": "STAGE_REGION", "value": "${TestRegion}"}, {"name": "STAGE_STACK_NAME", "value": "${TestStackName}"}, {"name": "STAGE_PIPELINE_EXECUTION_ROLE", "value": "${TestPipelineExecutionRole}"}, {"name": "STAGE_CLOUDFORMATION_EXECUTION_ROLE", "value": "${TestCloudFormationExecutionRole}"}, {"name": "STAGE_BUCKET", "value": "${TestArtifactBucket}"}]'
+                InputArtifacts:
+                  - Name: BuildArtifactAsZip
+          - !Ref AWS::NoValue
+
+        - !If
+          - IsMainBranchPipeline
+          - Name: DeployProd
+            Actions:
+              - Name: DeployProd
+                ActionTypeId:
+                  Category: Build
+                  Owner: AWS
+                  Provider: CodeBuild
+                  Version: "1"
+                Configuration:
+                  ProjectName: !Ref CodeBuildProjectDeploy
+                  EnvironmentVariables: !Sub '[{"name": "STAGE_TEMPLATE", "value": "packaged-prod.yaml"}, {"name": "STAGE_REGION", "value": "${ProdRegion}"}, {"name": "STAGE_STACK_NAME", "value": "${ProdStackName}"}, {"name": "STAGE_PIPELINE_EXECUTION_ROLE", "value": "${ProdPipelineExecutionRole}"}, {"name": "STAGE_CLOUDFORMATION_EXECUTION_ROLE", "value": "${ProdCloudFormationExecutionExeRole}"}, {"name": "STAGE_BUCKET", "value": "${ProdArtifactBucket}"}]'
+                InputArtifacts:
+                  - Name: BuildArtifactAsZip
+          - !Ref AWS::NoValue
 
   PipelineArtifactsBucket:
     Type: AWS::S3::Bucket
@@ -206,7 +253,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - "codestar-connections:UseConnection"
-                Resource: !Ref CodeStarConnection
+                Resource: !If [CreateConnection, !Ref CodeStarConnection, !Ref CodeStarConnectionArn]
         - PolicyName: CodePipelineCodeAndS3Bucket
           PolicyDocument:
             Version: "2012-10-17"
@@ -318,6 +365,53 @@ Resources:
                   - sts:AssumeRole
                 Effect: Allow
                 Resource: "*"
+  
+  CodeBuildProjectBuildAndDeployFeature:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:1.0
+        EnvironmentVariables:
+          - Name: SAM_TEMPLATE
+            Value: !Ref SamTemplate
+          - Name: TEST_REGION
+            Value: !Ref TestRegion
+          - Name: TEST_PIPELINE_EXECUTION_ROLE
+            Value: !Ref TestPipelineExecutionRole
+          - Name: TEST_ARTIFACT_BUCKET
+            Value: !Ref TestArtifactBucket
+          - Name: TEST_IMAGE_REPOSITORY
+            Value: !Ref TestImageRepository
+          - Name: FEATURE_BRANCH_NAME
+            Value: !Ref FeatureGitBranch
+      Cache:
+        Type: S3
+        Location: !Sub ${PipelineArtifactsBucket}/codebuild-cache-${FeatureGitBranch}
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec:  |
+          version: 0.2
+          phases:
+            install:
+              runtime-versions:
+                  python: 3.7
+            build:
+              commands:
+                - pip install --upgrade pip
+                - pip install awscli aws-sam-cli
+                - sam build --template ${SAM_TEMPLATE}
+                - . ./assume-role.sh ${TEST_REGION} ${TEST_PIPELINE_EXECUTION_ROLE} feature-deploy
+                - sam deploy --stack-name $(echo ${FEATURE_BRANCH_NAME} | tr -cd '[a-zA-Z0-9-]')
+                             --capabilities CAPABILITY_IAM
+                             --region ${STAGE_REGION}
+                             --s3-bucket ${STAGE_BUCKET}
+                             --no-fail-on-empty-changeset
+                             --role-arn ${STAGE_CLOUDFORMATION_EXECUTION_ROLE}
 
   CodeBuildProjectBuildAndPackage:
     Type: AWS::CodeBuild::Project
@@ -329,6 +423,8 @@ Resources:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/amazonlinux2-x86_64-standard:1.0
         EnvironmentVariables:
+          - Name: SAM_TEMPLATE
+            Value: !Ref SamTemplate
           - Name: TEST_REGION
             Value: !Ref TestRegion
           - Name: PROD_REGION
@@ -361,7 +457,7 @@ Resources:
               commands:
                 - pip install --upgrade pip
                 - pip install awscli aws-sam-cli
-                - sam build
+                - sam build --template ${SAM_TEMPLATE}
                 - . ./assume-role.sh ${TEST_REGION} ${TEST_PIPELINE_EXECUTION_ROLE} test-package
                 - sam package --s3-bucket ${TEST_ARTIFACT_BUCKET}
                               --region ${TEST_REGION}

@@ -508,3 +508,8 @@ Resources:
                              --s3-bucket ${STAGE_BUCKET}
                              --no-fail-on-empty-changeset
                              --role-arn ${STAGE_CLOUDFORMATION_EXECUTION_ROLE}
+
+Outputs:
+  CodeStarConnectionArn:
+    Description: The Arn of AWS CodeStar Connection used to connect to external code repositories.
+    Value: !If [CreateConnection, !Ref CodeStarConnection, !Ref CodeStarConnectionArn]

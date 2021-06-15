@@ -8,9 +8,19 @@ Resources:
       Handler: app.handler
       Runtime: python3.7
       CodeUri: src
-      Timeout: 600
       # testing whether "Environment: ~" is valid
       Environment: ~
+      Timeout: ~
+  
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: app.handler
+      Runtime: python3.7
+      Code: src
+      # testing whether "Environment: ~" is valid
+      Environment: ~
+      Timeout: ~
 
   # ImageFunction:
   #   Type: AWS::Serverless::Function

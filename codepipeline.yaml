@@ -109,6 +109,11 @@ Resources:
                 ChangeSetName: !Sub ${AWS::StackName}-ChangeSet
                 TemplatePath: SourceCodeAsZip::codepipeline.yaml
                 Capabilities: CAPABILITY_NAMED_IAM
+                ParameterOverrides: !Sub |
+                  {
+                    "FeatureGitBranch": "${FeatureGitBranch}",
+                    "CodeStarConnectionArn": "${CodeStarConnectionArn}"
+                  }
               InputArtifacts:
                 - Name: SourceCodeAsZip
               RunOrder: 1

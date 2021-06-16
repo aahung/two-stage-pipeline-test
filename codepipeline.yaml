@@ -81,7 +81,7 @@ Resources:
       Stages:
         - Name: Source
           Actions:
-            - Name: !Sub "Source: ${!Ref FullRepositoryId}${FeatureGitBranch}"
+            - Name: SourceCodeRepo
               ActionTypeId:
                 Category: Source
                 Owner: AWS

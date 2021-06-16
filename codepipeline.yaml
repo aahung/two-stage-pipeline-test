@@ -422,6 +422,7 @@ Resources:
           version: 0.2
           phases:
             install:
+              run-as: root
               runtime-versions:
                 python: 3.7
               commands:

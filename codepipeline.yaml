@@ -428,7 +428,7 @@ Resources:
               commands:
                 - pip install --upgrade pip
                 - pip install awscli aws-sam-cli
-                - sam build --template ${SAM_TEMPLATE}
+                - sam build --use-container --template ${SAM_TEMPLATE}
                 - . ./assume-role.sh ${TEST_REGION} ${TEST_PIPELINE_EXECUTION_ROLE} feature-deploy
                 - sam deploy --stack-name $(echo ${FEATURE_BRANCH_NAME} | tr -cd '[a-zA-Z0-9-]')
                              --capabilities CAPABILITY_IAM

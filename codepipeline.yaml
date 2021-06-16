@@ -388,6 +388,8 @@ Resources:
             Value: !Ref TestRegion
           - Name: TEST_PIPELINE_EXECUTION_ROLE
             Value: !Ref TestPipelineExecutionRole
+          - Name: TEST_CLOUDFORMATION_EXECUTION_ROLE
+            Value: !Ref TestCloudFormationExecutionRole
           - Name: TEST_ARTIFACT_BUCKET
             Value: !Ref TestArtifactBucket
           - Name: TEST_IMAGE_REPOSITORY
@@ -414,10 +416,10 @@ Resources:
                 - . ./assume-role.sh ${TEST_REGION} ${TEST_PIPELINE_EXECUTION_ROLE} feature-deploy
                 - sam deploy --stack-name $(echo ${FEATURE_BRANCH_NAME} | tr -cd '[a-zA-Z0-9-]')
                              --capabilities CAPABILITY_IAM
-                             --region ${STAGE_REGION}
-                             --s3-bucket ${STAGE_BUCKET}
+                             --region ${TEST_REGION}
+                             --s3-bucket ${TEST_ARTIFACT_BUCKET}
                              --no-fail-on-empty-changeset
-                             --role-arn ${STAGE_CLOUDFORMATION_EXECUTION_ROLE}
+                             --role-arn ${TEST_CLOUDFORMATION_EXECUTION_ROLE}
 
   CodeBuildProjectBuildAndPackage:
     Condition: IsMainBranchPipeline

@@ -45,9 +45,17 @@ Parameters:
     Default: "aws-sam-cli-managed-prod-pipeline-artifactsbucket-1gq7al2xjqqfc"
   TestImageRepository:
     Type: String
+    # If there are functions with "Image" PackageType in your template,
+    # Replace the line below with image repository URL and add "--image-repository ${TEST_IMAGE_REPOSITORY}" to
+    # prod "sam package" and "sam deploy" commands.
+    # Default: "0123456789.dkr.ecr.region.amazonaws.com/repository-name"
     Default: ""
   ProdImageRepository:
     Type: String
+    # If there are functions with "Image" PackageType in your template,
+    # Replace the line below with image repository URL and add "--image-repository ${PROD_IMAGE_REPOSITORY}" to
+    # prod "sam package" and "sam deploy" commands.
+    # Default: "0123456789.dkr.ecr.region.amazonaws.com/repository-name"
     Default: ""
   # CodeStarConnectionArn and FeatureGitBranch are required for pipelines for feature branches
   CodeStarConnectionArn:
@@ -199,7 +207,8 @@ Resources:
                       {"name": "STAGE_STACK_NAME", "value": "${TestStackName}"},
                       {"name": "STAGE_PIPELINE_EXECUTION_ROLE", "value": "${TestPipelineExecutionRole}"},
                       {"name": "STAGE_CLOUDFORMATION_EXECUTION_ROLE", "value": "${TestCloudFormationExecutionRole}"},
-                      {"name": "STAGE_BUCKET", "value": "${TestArtifactBucket}"}
+                      {"name": "STAGE_BUCKET", "value": "${TestArtifactBucket}"},
+                      {"name": "STAGE_IMAGE_REPOSITORY", "value": "${TestImageRepository}"}
                     ]
                 InputArtifacts:
                   - Name: BuildArtifactAsZip
@@ -236,7 +245,8 @@ Resources:
                       {"name": "STAGE_STACK_NAME", "value": "${ProdStackName}"},
                       {"name": "STAGE_PIPELINE_EXECUTION_ROLE", "value": "${ProdPipelineExecutionRole}"},
                       {"name": "STAGE_CLOUDFORMATION_EXECUTION_ROLE", "value": "${ProdCloudFormationExecutionExeRole}"},
-                      {"name": "STAGE_BUCKET", "value": "${ProdArtifactBucket}"}
+                      {"name": "STAGE_BUCKET", "value": "${ProdArtifactBucket}"},
+                      {"name": "STAGE_IMAGE_REPOSITORY", "value": "${ProdImageRepository}"}
                     ]
                 InputArtifacts:
                   - Name: BuildArtifactAsZip
@@ -546,7 +556,7 @@ Resources:
                               --region ${TEST_REGION}
                               --output-template-file packaged-test.yaml
                 - . ./assume-role.sh ${PROD_REGION} ${PROD_PIPELINE_EXECUTION_ROLE} prod-package
-                - sam package --s3-bucket ${PROD_ARTIFACT_BUCKET} 
+                - sam package --s3-bucket ${PROD_ARTIFACT_BUCKET}
                               --region ${PROD_REGION}
                               --output-template-file packaged-prod.yaml
           artifacts:

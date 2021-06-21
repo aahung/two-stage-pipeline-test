@@ -45,10 +45,10 @@ Parameters:
     Default: "aws-sam-cli-managed-prod-pipeline-artifactsbucket-1gq7al2xjqqfc"
   TestImageRepository:
     Type: String
-    Default: "arn:aws:ecr:us-west-2:191762412092:repository/aws-sam-cli-managed-test-pipeline-resources-imagerepository-frnkumd8ftbb"
+    Default: "191762412092.dkr.ecr.us-west-2.amazonaws.com/aws-sam-cli-managed-test-pipeline-resources-imagerepository-frnkumd8ftbb"
   ProdImageRepository:
     Type: String
-    Default: "arn:aws:ecr:us-east-2:013714286599:repository/aws-sam-cli-managed-prod-pipeline-resources-imagerepository-quzc6rsdyfio"
+    Default: "013714286599.dkr.ecr.us-east-2.amazonaws.com/aws-sam-cli-managed-prod-pipeline-resources-imagerepository-quzc6rsdyfio"
   # CodeStarConnectionArn and FeatureGitBranch are required for pipelines for feature branches
   CodeStarConnectionArn:
     Type: String

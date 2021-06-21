@@ -45,18 +45,10 @@ Parameters:
     Default: "aws-sam-cli-managed-prod-pipeline-artifactsbucket-1gq7al2xjqqfc"
   TestImageRepository:
     Type: String
-    # If there are functions with "Image" PackageType in your template,
-    # Replace the line below with image repository URL and add "--image-repository ${TEST_IMAGE_REPOSITORY}" to
-    # prod "sam package" and "sam deploy" commands.
-    # Default: "0123456789.dkr.ecr.region.amazonaws.com/repository-name"
-    Default: ""
+    Default: "arn:aws:ecr:us-west-2:191762412092:repository/aws-sam-cli-managed-test-pipeline-resources-imagerepository-frnkumd8ftbb"
   ProdImageRepository:
     Type: String
-    # If there are functions with "Image" PackageType in your template,
-    # Replace the line below with image repository URL and add "--image-repository ${PROD_IMAGE_REPOSITORY}" to
-    # prod "sam package" and "sam deploy" commands.
-    # Default: "0123456789.dkr.ecr.region.amazonaws.com/repository-name"
-    Default: ""
+    Default: "arn:aws:ecr:us-east-2:013714286599:repository/aws-sam-cli-managed-prod-pipeline-resources-imagerepository-quzc6rsdyfio"
   # CodeStarConnectionArn and FeatureGitBranch are required for pipelines for feature branches
   CodeStarConnectionArn:
     Type: String
@@ -498,6 +490,7 @@ Resources:
                              --capabilities CAPABILITY_IAM
                              --region ${TEST_REGION}
                              --s3-bucket ${TEST_ARTIFACT_BUCKET}
+                             --image-repository ${TEST_IMAGE_REPOSITORY}
                              --no-fail-on-empty-changeset
                              --role-arn ${TEST_CLOUDFORMATION_EXECUTION_ROLE}
 
@@ -553,10 +546,12 @@ Resources:
                 - sam build --use-container --template ${SAM_TEMPLATE}
                 - . ./assume-role.sh ${TEST_REGION} ${TEST_PIPELINE_EXECUTION_ROLE} test-package
                 - sam package --s3-bucket ${TEST_ARTIFACT_BUCKET}
+                              --image-repository ${TEST_IMAGE_REPOSITORY}
                               --region ${TEST_REGION}
                               --output-template-file packaged-test.yaml
                 - . ./assume-role.sh ${PROD_REGION} ${PROD_PIPELINE_EXECUTION_ROLE} prod-package
                 - sam package --s3-bucket ${PROD_ARTIFACT_BUCKET}
+                              --image-repository ${PROD_IMAGE_REPOSITORY}
                               --region ${PROD_REGION}
                               --output-template-file packaged-prod.yaml
           artifacts:
@@ -621,6 +616,7 @@ Resources:
                              --capabilities CAPABILITY_IAM
                              --region ${STAGE_REGION}
                              --s3-bucket ${STAGE_BUCKET}
+                             --image-repository ${STAGE_IMAGE_REPOSITORY}
                              --no-fail-on-empty-changeset
                              --role-arn ${STAGE_CLOUDFORMATION_EXECUTION_ROLE}
 

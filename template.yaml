@@ -6,11 +6,9 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: app.handler
+      PackageType: Zip
       Runtime: python3.7
       CodeUri: src
-      # testing whether "Environment: ~" is valid
-      Environment: ~
-      Timeout: ~
 
   ImageFunction:
     Type: AWS::Serverless::Function

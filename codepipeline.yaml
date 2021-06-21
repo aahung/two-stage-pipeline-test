@@ -13,37 +13,37 @@ Parameters:
   SamTemplate:
     Type: String
     Default: "template.yaml"
-  TestRegion:
+  TestingRegion:
     Type: String
     Default: "us-west-2"
   ProdRegion:
     Type: String
     Default: "us-east-2"
-  TestStackName:
+  TestingStackName:
     Type: String
     Default: "test-20210610"
   ProdStackName:
     Type: String
     Default: "prod-20210610"
-  TestPipelineExecutionRole:
+  TestingPipelineExecutionRole:
     Type: String
     Default: "arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-pip-PipelineExecutionRole-15S4EKYWRQFHC"
   ProdPipelineExecutionRole:
     Type: String
     Default: "arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-pip-PipelineExecutionRole-1RCT06Q0X5RFV"
-  TestCloudFormationExecutionRole:
+  TestingCloudFormationExecutionRole:
     Type: String
     Default: "arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-CloudFormationExecutionR-GGBB1BXWMPG1"
   ProdCloudFormationExecutionExeRole:
     Type: String
     Default: "arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-CloudFormationExecutionR-I3R8W59IZOCR"
-  TestArtifactBucket:
+  TestingArtifactBucket:
     Type: String
     Default: "aws-sam-cli-managed-test-pipeline-artifactsbucket-1pbwfwjs3ylo8"
   ProdArtifactBucket:
     Type: String
     Default: "aws-sam-cli-managed-prod-pipeline-artifactsbucket-1gq7al2xjqqfc"
-  TestImageRepository:
+  TestingImageRepository:
     Type: String
     Default: "191762412092.dkr.ecr.us-west-2.amazonaws.com/aws-sam-cli-managed-test-pipeline-resources-imagerepository-frnkumd8ftbb"
   ProdImageRepository:
@@ -194,13 +194,13 @@ Resources:
                   ProjectName: !Ref CodeBuildProjectDeploy
                   EnvironmentVariables: !Sub |
                     [
-                      {"name": "STAGE_TEMPLATE", "value": "packaged-test.yaml"},
-                      {"name": "STAGE_REGION", "value": "${TestRegion}"},
-                      {"name": "STAGE_STACK_NAME", "value": "${TestStackName}"},
-                      {"name": "STAGE_PIPELINE_EXECUTION_ROLE", "value": "${TestPipelineExecutionRole}"},
-                      {"name": "STAGE_CLOUDFORMATION_EXECUTION_ROLE", "value": "${TestCloudFormationExecutionRole}"},
-                      {"name": "STAGE_BUCKET", "value": "${TestArtifactBucket}"},
-                      {"name": "STAGE_IMAGE_REPOSITORY", "value": "${TestImageRepository}"}
+                      {"name": "ENV_TEMPLATE", "value": "packaged-test.yaml"},
+                      {"name": "ENV_REGION", "value": "${TestingRegion}"},
+                      {"name": "ENV_STACK_NAME", "value": "${TestingStackName}"},
+                      {"name": "ENV_PIPELINE_EXECUTION_ROLE", "value": "${TestingPipelineExecutionRole}"},
+                      {"name": "ENV_CLOUDFORMATION_EXECUTION_ROLE", "value": "${TestingCloudFormationExecutionRole}"},
+                      {"name": "ENV_BUCKET", "value": "${TestingArtifactBucket}"},
+                      {"name": "ENV_IMAGE_REPOSITORY", "value": "${TestingImageRepository}"}
                     ]
                 InputArtifacts:
                   - Name: BuildArtifactAsZip
@@ -232,13 +232,13 @@ Resources:
                   ProjectName: !Ref CodeBuildProjectDeploy
                   EnvironmentVariables: !Sub |
                     [
-                      {"name": "STAGE_TEMPLATE", "value": "packaged-prod.yaml"},
-                      {"name": "STAGE_REGION", "value": "${ProdRegion}"},
-                      {"name": "STAGE_STACK_NAME", "value": "${ProdStackName}"},
-                      {"name": "STAGE_PIPELINE_EXECUTION_ROLE", "value": "${ProdPipelineExecutionRole}"},
-                      {"name": "STAGE_CLOUDFORMATION_EXECUTION_ROLE", "value": "${ProdCloudFormationExecutionExeRole}"},
-                      {"name": "STAGE_BUCKET", "value": "${ProdArtifactBucket}"},
-                      {"name": "STAGE_IMAGE_REPOSITORY", "value": "${ProdImageRepository}"}
+                      {"name": "ENV_TEMPLATE", "value": "packaged-prod.yaml"},
+                      {"name": "ENV_REGION", "value": "${ProdRegion}"},
+                      {"name": "ENV_STACK_NAME", "value": "${ProdStackName}"},
+                      {"name": "ENV_PIPELINE_EXECUTION_ROLE", "value": "${ProdPipelineExecutionRole}"},
+                      {"name": "ENV_CLOUDFORMATION_EXECUTION_ROLE", "value": "${ProdCloudFormationExecutionExeRole}"},
+                      {"name": "ENV_BUCKET", "value": "${ProdArtifactBucket}"},
+                      {"name": "ENV_IMAGE_REPOSITORY", "value": "${ProdImageRepository}"}
                     ]
                 InputArtifacts:
                   - Name: BuildArtifactAsZip
@@ -453,16 +453,16 @@ Resources:
         EnvironmentVariables:
           - Name: SAM_TEMPLATE
             Value: !Ref SamTemplate
-          - Name: TEST_REGION
-            Value: !Ref TestRegion
-          - Name: TEST_PIPELINE_EXECUTION_ROLE
-            Value: !Ref TestPipelineExecutionRole
-          - Name: TEST_CLOUDFORMATION_EXECUTION_ROLE
-            Value: !Ref TestCloudFormationExecutionRole
-          - Name: TEST_ARTIFACT_BUCKET
-            Value: !Ref TestArtifactBucket
-          - Name: TEST_IMAGE_REPOSITORY
-            Value: !Ref TestImageRepository
+          - Name: TESTING_REGION
+            Value: !Ref TestingRegion
+          - Name: TESTING_PIPELINE_EXECUTION_ROLE
+            Value: !Ref TestingPipelineExecutionRole
+          - Name: TESTING_CLOUDFORMATION_EXECUTION_ROLE
+            Value: !Ref TestingCloudFormationExecutionRole
+          - Name: TESTING_ARTIFACT_BUCKET
+            Value: !Ref TestingArtifactBucket
+          - Name: TESTING_IMAGE_REPOSITORY
+            Value: !Ref TestingImageRepository
           - Name: FEATURE_BRANCH_NAME
             Value: !Ref FeatureGitBranch
       Cache:
@@ -485,14 +485,14 @@ Resources:
             build:
               commands:
                 - sam build --use-container --template ${SAM_TEMPLATE}
-                - . ./assume-role.sh ${TEST_REGION} ${TEST_PIPELINE_EXECUTION_ROLE} feature-deploy
+                - . ./assume-role.sh ${TESTING_REGION} ${TESTING_PIPELINE_EXECUTION_ROLE} feature-deploy
                 - sam deploy --stack-name $(echo ${FEATURE_BRANCH_NAME} | tr -cd '[a-zA-Z0-9-]')
                              --capabilities CAPABILITY_IAM
-                             --region ${TEST_REGION}
-                             --s3-bucket ${TEST_ARTIFACT_BUCKET}
-                             --image-repository ${TEST_IMAGE_REPOSITORY}
+                             --region ${TESTING_REGION}
+                             --s3-bucket ${TESTING_ARTIFACT_BUCKET}
+                             --image-repository ${TESTING_IMAGE_REPOSITORY}
                              --no-fail-on-empty-changeset
-                             --role-arn ${TEST_CLOUDFORMATION_EXECUTION_ROLE}
+                             --role-arn ${TESTING_CLOUDFORMATION_EXECUTION_ROLE}
 
   CodeBuildProjectBuildAndPackage:
     Condition: IsMainBranchPipeline
@@ -508,20 +508,20 @@ Resources:
         EnvironmentVariables:
           - Name: SAM_TEMPLATE
             Value: !Ref SamTemplate
-          - Name: TEST_REGION
-            Value: !Ref TestRegion
+          - Name: TESTING_REGION
+            Value: !Ref TestingRegion
           - Name: PROD_REGION
             Value: !Ref ProdRegion
-          - Name: TEST_PIPELINE_EXECUTION_ROLE
-            Value: !Ref TestPipelineExecutionRole
+          - Name: TESTING_PIPELINE_EXECUTION_ROLE
+            Value: !Ref TestingPipelineExecutionRole
           - Name: PROD_PIPELINE_EXECUTION_ROLE
             Value: !Ref ProdPipelineExecutionRole
-          - Name: TEST_ARTIFACT_BUCKET
-            Value: !Ref TestArtifactBucket
+          - Name: TESTING_ARTIFACT_BUCKET
+            Value: !Ref TestingArtifactBucket
           - Name: PROD_ARTIFACT_BUCKET
             Value: !Ref ProdArtifactBucket
-          - Name: TEST_IMAGE_REPOSITORY
-            Value: !Ref TestImageRepository
+          - Name: TESTING_IMAGE_REPOSITORY
+            Value: !Ref TestingImageRepository
           - Name: PROD_IMAGE_REPOSITORY
             Value: !Ref ProdImageRepository
       Cache:
@@ -544,10 +544,10 @@ Resources:
             build:
               commands:
                 - sam build --use-container --template ${SAM_TEMPLATE}
-                - . ./assume-role.sh ${TEST_REGION} ${TEST_PIPELINE_EXECUTION_ROLE} test-package
-                - sam package --s3-bucket ${TEST_ARTIFACT_BUCKET}
-                              --image-repository ${TEST_IMAGE_REPOSITORY}
-                              --region ${TEST_REGION}
+                - . ./assume-role.sh ${TESTING_REGION} ${TESTING_PIPELINE_EXECUTION_ROLE} test-package
+                - sam package --s3-bucket ${TESTING_ARTIFACT_BUCKET}
+                              --image-repository ${TESTING_IMAGE_REPOSITORY}
+                              --region ${TESTING_REGION}
                               --output-template-file packaged-test.yaml
                 - . ./assume-role.sh ${PROD_REGION} ${PROD_PIPELINE_EXECUTION_ROLE} prod-package
                 - sam package --s3-bucket ${PROD_ARTIFACT_BUCKET}
@@ -611,15 +611,15 @@ Resources:
                 - pip install --upgrade awscli aws-sam-cli
             build:
               commands:
-                - . ./assume-role.sh ${STAGE_REGION} ${STAGE_PIPELINE_EXECUTION_ROLE} deploy
-                - sam deploy --stack-name ${STAGE_STACK_NAME} 
-                             --template ${STAGE_TEMPLATE}
+                - . ./assume-role.sh ${ENV_REGION} ${ENV_PIPELINE_EXECUTION_ROLE} deploy
+                - sam deploy --stack-name ${ENV_STACK_NAME} 
+                             --template ${ENV_TEMPLATE}
                              --capabilities CAPABILITY_IAM
-                             --region ${STAGE_REGION}
-                             --s3-bucket ${STAGE_BUCKET}
-                             --image-repository ${STAGE_IMAGE_REPOSITORY}
+                             --region ${ENV_REGION}
+                             --s3-bucket ${ENV_BUCKET}
+                             --image-repository ${ENV_IMAGE_REPOSITORY}
                              --no-fail-on-empty-changeset
-                             --role-arn ${STAGE_CLOUDFORMATION_EXECUTION_ROLE}
+                             --role-arn ${ENV_CLOUDFORMATION_EXECUTION_ROLE}
 
 Outputs:
   CodeStarConnectionArn:

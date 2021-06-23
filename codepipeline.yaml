@@ -31,8 +31,9 @@ Description: >
 # "<branch-name>" with the branch name and "<codestar-connection-arn>" with the CodeStar Connection ARN which
 # can be found in the first pipeline stack's output.)
 
+
 Parameters:
-  CodeStarConnectionProviderType:
+  GitProviderType:
     Type: String
     Default: "GitHub"
   FullRepositoryId:
@@ -99,7 +100,7 @@ Resources:
     Type: AWS::CodeStarConnections::Connection
     Properties: 
       ConnectionName: GitRepositoryConnection
-      ProviderType: !Ref CodeStarConnectionProviderType
+      ProviderType: !Ref GitProviderType
 
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -651,8 +652,8 @@ Resources:
                              --image-repository ${ENV_IMAGE_REPOSITORY}
                              --no-fail-on-empty-changeset
                              --role-arn ${ENV_CLOUDFORMATION_EXECUTION_ROLE}
-
 Outputs:
   CodeStarConnectionArn:
+    Condition: CreateConnection
     Description: The Arn of AWS CodeStar Connection used to connect to external code repositories.
-    Value: !If [CreateConnection, !Ref CodeStarConnection, !Ref CodeStarConnectionArn]
+    Value: !Ref CodeStarConnection

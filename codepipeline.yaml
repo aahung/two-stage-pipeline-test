@@ -13,9 +13,8 @@ Description: >
   **WARNING** You will be billed for the AWS resources used if you create a stack from this template.
 
 
-# To deploy this template and connect to the main git branch, run
-# `sam deploy -t codepipeline.yaml --stack-name <stack-name> --capabilities=CAPABILITY_IAM`
-# (replace "<stack-name>" with the name of the AWS CloudFormation stack that you're deploying to).
+# To deploy this template and connect to the main git branch, run this against the leading account:
+# `sam deploy -t codepipeline.yaml --stack-name <stack-name> --capabilities=CAPABILITY_IAM`.
 # After creating the stack, the CodeStar Connection is in PENDING status by default. You must complete 
 # the OAuth handshake with the third-party provider using the installation associated with your connection.
 # See https://docs.aws.amazon.com/dtconsole/latest/userguide/connections-update.html for instructions.
@@ -25,10 +24,6 @@ Description: >
 # sam deploy -t codepipeline.yaml --stack-name <stack-name> --capabilities=CAPABILITY_IAM \
 #   --parameter-overrides="FeatureGitBranch=<branch-name> CodeStarConnectionArn=<codestar-connection-arn>"
 # ```
-# (replace "<stack-name>" with the name of the AWS CloudFormation stack 
-# that you're deploying to, "<branch-name>" with the branch name
-# and "<codestar-connection-arn>" with the CodeStar Connection ARN which
-# can be found in the first pipeline stack's output.)
 
 
 Parameters:
@@ -211,43 +206,44 @@ Resources:
                   - Name: BuildArtifactAsZip
           - !Ref AWS::NoValue
         
-        - !If
-          - IsMainBranchPipeline
-          - Name: DeployTest
-            Actions:
-              - Name: DeployTest
-                ActionTypeId:
-                  Category: Build
-                  Owner: AWS
-                  Provider: CodeBuild
-                  Version: "1"
-                Configuration:
-                  ProjectName: !Ref CodeBuildProjectDeploy
-                  EnvironmentVariables: !Sub |
-                    [
-                      {"name": "ENV_TEMPLATE", "value": "packaged-test.yaml"},
-                      {"name": "ENV_REGION", "value": "${TestingRegion}"},
-                      {"name": "ENV_STACK_NAME", "value": "${TestingStackName}"},
-                      {"name": "ENV_PIPELINE_EXECUTION_ROLE", "value": "${TestingPipelineExecutionRole}"},
-                      {"name": "ENV_CLOUDFORMATION_EXECUTION_ROLE", "value": "${TestingCloudFormationExecutionRole}"},
-                      {"name": "ENV_BUCKET", "value": "${TestingArtifactBucket}"},
-                      {"name": "ENV_IMAGE_REPOSITORY", "value": "${TestingImageRepository}"}
-                    ]
-                InputArtifacts:
-                  - Name: BuildArtifactAsZip
-                RunOrder: 1
-              - Name: IntegrationTest
-                ActionTypeId:
-                  Category: Build
-                  Owner: AWS
-                  Provider: CodeBuild
-                  Version: "1"
-                Configuration:
-                  ProjectName: !Ref CodeBuildProjectIntegrationTest
-                InputArtifacts:
-                  - Name: SourceCodeAsZip
-                RunOrder: 2
-          - !Ref AWS::NoValue
+        # Uncomment the following step for running the integration tests
+        # - !If
+        #   - IsMainBranchPipeline
+        #   - Name: DeployTest
+        #     Actions:
+        #       - Name: DeployTest
+        #         ActionTypeId:
+        #           Category: Build
+        #           Owner: AWS
+        #           Provider: CodeBuild
+        #           Version: "1"
+        #         Configuration:
+        #           ProjectName: !Ref CodeBuildProjectDeploy
+        #           EnvironmentVariables: !Sub |
+        #             [
+        #               {"name": "ENV_TEMPLATE", "value": "packaged-test.yaml"},
+        #               {"name": "ENV_REGION", "value": "${TestingRegion}"},
+        #               {"name": "ENV_STACK_NAME", "value": "${TestingStackName}"},
+        #               {"name": "ENV_PIPELINE_EXECUTION_ROLE", "value": "${TestingPipelineExecutionRole}"},
+        #               {"name": "ENV_CLOUDFORMATION_EXECUTION_ROLE", "value": "${TestingCloudFormationExecutionRole}"},
+        #               {"name": "ENV_BUCKET", "value": "${TestingArtifactBucket}"},
+        #               {"name": "ENV_IMAGE_REPOSITORY", "value": "${TestingImageRepository}"}
+        #             ]
+        #         InputArtifacts:
+        #           - Name: BuildArtifactAsZip
+        #         RunOrder: 1
+        #       - Name: IntegrationTest
+        #         ActionTypeId:
+        #           Category: Build
+        #           Owner: AWS
+        #           Provider: CodeBuild
+        #           Version: "1"
+        #         Configuration:
+        #           ProjectName: !Ref CodeBuildProjectIntegrationTest
+        #         InputArtifacts:
+        #           - Name: SourceCodeAsZip
+        #         RunOrder: 2
+        #   - !Ref AWS::NoValue
 
         - !If
           - IsMainBranchPipeline
@@ -277,7 +273,8 @@ Resources:
 
   PipelineArtifactsBucket:
     Type: AWS::S3::Bucket
-    DeletionPolicy: "Retain"
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       VersioningConfiguration:
         Status: Enabled
@@ -300,7 +297,7 @@ Resources:
             Action: "s3:*"
             Principal: "*"
             Resource:
-              - !Join [ '',[ !GetAtt PipelineArtifactsBucket.Arn, '/*' ] ]
+              - !Sub  "${PipelineArtifactsBucket.Arn}/*"
               - !GetAtt PipelineArtifactsBucket.Arn
             Condition:
               Bool:
@@ -317,7 +314,8 @@ Resources:
 
   PipelineArtifactsLoggingBucket:
     Type: AWS::S3::Bucket
-    DeletionPolicy: "Retain"
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       AccessControl: "LogDeliveryWrite"
       VersioningConfiguration:
@@ -337,7 +335,7 @@ Resources:
             Action: "s3:*"
             Principal: "*"
             Resource:
-              - !Join [ '',[ !GetAtt PipelineArtifactsLoggingBucket.Arn, '/*' ] ]
+              - !Sub "${PipelineArtifactsLoggingBucket.Arn}/*"
               - !GetAtt PipelineArtifactsLoggingBucket.Arn
             Condition:
               Bool:
@@ -355,7 +353,6 @@ Resources:
             Principal:
               Service:
                 - codepipeline.amazonaws.com
-      Path: /
       Policies:
         - PolicyName: CodePipelineAccess
           PolicyDocument:
@@ -412,10 +409,11 @@ Resources:
                     - IsMainBranchPipeline
                     - !GetAtt CodeBuildProjectBuildAndPackage.Arn
                     - !Ref AWS::NoValue
-                  - !If
-                    - IsMainBranchPipeline
-                    - !GetAtt CodeBuildProjectIntegrationTest.Arn
-                    - !Ref AWS::NoValue
+                  # Uncomment the following step for running the integration tests
+                  # - !If
+                  #   - IsMainBranchPipeline
+                  #   - !GetAtt CodeBuildProjectIntegrationTest.Arn
+                  #   - !Ref AWS::NoValue
                   - !If
                     - IsMainBranchPipeline
                     - !GetAtt CodeBuildProjectDeploy.Arn
@@ -446,7 +444,6 @@ Resources:
           Effect: Allow
           Principal:
             Service: cloudformation.amazonaws.com
-      Path: /
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/AdministratorAccess"
 
@@ -462,7 +459,6 @@ Resources:
             Principal:
               Service:
                 - codebuild.amazonaws.com
-      Path: /
       Policies:
         - PolicyName: CodeBuildLogs
           PolicyDocument:
@@ -513,7 +509,7 @@ Resources:
   #         phases:
   #           install:
   #             runtime-versions:
-  #               python: 3.7
+  #               python: 3.8
   #           build:
   #             commands:
   #               # trigger the unit tests here
@@ -545,9 +541,6 @@ Resources:
             Value: !Ref TestingImageRepository
           - Name: FEATURE_BRANCH_NAME
             Value: !Ref FeatureGitBranch
-      Cache:
-        Type: S3
-        Location: !Sub ${PipelineArtifactsBucket}/codebuild-cache-${FeatureGitBranch}
       ServiceRole: !GetAtt CodeBuildServiceRole.Arn
       Source:
         Type: CODEPIPELINE
@@ -556,7 +549,7 @@ Resources:
           phases:
             install:
               runtime-versions:
-                python: 3.7
+                python: 3.8
               commands:
                 - pip install --upgrade pip
                 - pip install --upgrade awscli aws-sam-cli
@@ -604,9 +597,6 @@ Resources:
             Value: !Ref TestingImageRepository
           - Name: PROD_IMAGE_REPOSITORY
             Value: !Ref ProdImageRepository
-      Cache:
-        Type: S3
-        Location: !Sub ${PipelineArtifactsBucket}/codebuild-cache
       ServiceRole: !GetAtt CodeBuildServiceRole.Arn
       Source:
         Type: CODEPIPELINE
@@ -615,7 +605,7 @@ Resources:
           phases:
             install:
               runtime-versions:
-                python: 3.7
+                python: 3.8
               commands:
                 - pip install --upgrade pip
                 - pip install --upgrade awscli aws-sam-cli
@@ -640,29 +630,30 @@ Resources:
               - packaged-prod.yaml
               - assume-role.sh
 
-  CodeBuildProjectIntegrationTest:
-    Condition: IsMainBranchPipeline
-    Type: AWS::CodeBuild::Project
-    Properties:
-      Artifacts:
-        Type: CODEPIPELINE
-      Environment:
-        Type: LINUX_CONTAINER
-        ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/amazonlinux2-x86_64-standard:1.0
-      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
-      Source:
-        Type: CODEPIPELINE
-        BuildSpec:  |
-          version: 0.2
-          phases:
-            install:
-              runtime-versions:
-                python: 3.7
-            build:
-              commands:
-                # trigger the integration tests here
-                - echo 'Running integration tests'
+  # Uncomment and modify the following step for running the integration tests
+  # CodeBuildProjectIntegrationTest:
+  #   Condition: IsMainBranchPipeline
+  #   Type: AWS::CodeBuild::Project
+  #   Properties:
+  #     Artifacts:
+  #       Type: CODEPIPELINE
+  #     Environment:
+  #       Type: LINUX_CONTAINER
+  #       ComputeType: BUILD_GENERAL1_SMALL
+  #       Image: aws/codebuild/amazonlinux2-x86_64-standard:1.0
+  #     ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+  #     Source:
+  #       Type: CODEPIPELINE
+  #       BuildSpec:  |
+  #         version: 0.2
+  #         phases:
+  #           install:
+  #             runtime-versions:
+  #               python: 3.8
+  #           build:
+  #             commands:
+  #               # trigger the integration tests here
+  #               - echo 'Running integration tests'
 
   CodeBuildProjectDeploy:
     Condition: IsMainBranchPipeline
@@ -674,9 +665,6 @@ Resources:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/amazonlinux2-x86_64-standard:1.0
-      Cache:
-        Type: S3
-        Location: !Sub ${PipelineArtifactsBucket}/codebuild-cache
       ServiceRole: !GetAtt CodeBuildServiceRole.Arn
       Source:
         Type: CODEPIPELINE
@@ -685,7 +673,7 @@ Resources:
           phases:
             install:
               runtime-versions:
-                python: 3.7
+                python: 3.8
               commands:
                 - pip install --upgrade pip
                 - pip install --upgrade awscli aws-sam-cli

@@ -44,7 +44,7 @@ Parameters:
     Default: "us-west-2"
   ProdRegion:
     Type: String
-    Default: "us-east-2"
+    Default: "us-east-1"
   TestingStackName:
     Type: String
     Default: "test-20210610"

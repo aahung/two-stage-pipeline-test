@@ -53,28 +53,28 @@ Parameters:
     Default: "prod-20210610"
   TestingPipelineExecutionRole:
     Type: String
-    Default: "arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-pip-PipelineExecutionRole-15S4EKYWRQFHC"
+    Default: "arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-pip-PipelineExecutionRole-1UPENALC3ILO3"
   ProdPipelineExecutionRole:
     Type: String
-    Default: "arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-pip-PipelineExecutionRole-1RCT06Q0X5RFV"
+    Default: "arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-pip-PipelineExecutionRole-1052V7X9T7W71"
   TestingCloudFormationExecutionRole:
     Type: String
-    Default: "arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-CloudFormationExecutionR-GGBB1BXWMPG1"
+    Default: "arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-CloudFormationExecutionR-LTPUFSZPT6BC"
   ProdCloudFormationExecutionExeRole:
     Type: String
-    Default: "arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-CloudFormationExecutionR-I3R8W59IZOCR"
+    Default: "arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-CloudFormationExecutionR-5I4W9KB56KB1"
   TestingArtifactBucket:
     Type: String
-    Default: "aws-sam-cli-managed-test-pipeline-artifactsbucket-1pbwfwjs3ylo8"
+    Default: "aws-sam-cli-managed-test-pipeline-artifactsbucket-2tcp5h7n0fu0"
   ProdArtifactBucket:
     Type: String
-    Default: "aws-sam-cli-managed-prod-pipeline-artifactsbucket-1gq7al2xjqqfc"
+    Default: "aws-sam-cli-managed-prod-pipeline-artifactsbucket-9o5l9go2lprm"
   TestingImageRepository:
     Type: String
-    Default: "191762412092.dkr.ecr.us-west-2.amazonaws.com/aws-sam-cli-managed-test-pipeline-resources-imagerepository-frnkumd8ftbb"
+    Default: "191762412092.dkr.ecr.us-west-2.amazonaws.com/aws-sam-cli-managed-test-pipeline-resources-imagerepository-4xuroxswjutq"
   ProdImageRepository:
     Type: String
-    Default: "013714286599.dkr.ecr.us-east-2.amazonaws.com/aws-sam-cli-managed-prod-pipeline-resources-imagerepository-quzc6rsdyfio"
+    Default: "013714286599.dkr.ecr.us-east-1.amazonaws.com/aws-sam-cli-managed-prod-pipeline-resources-imagerepository-kmouuwmn0ecb"
   # CodeStarConnectionArn and FeatureGitBranch are required for pipelines for feature branches
   CodeStarConnectionArn:
     Type: String

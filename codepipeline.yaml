@@ -47,10 +47,10 @@ Parameters:
     Default: "us-east-1"
   TestingStackName:
     Type: String
-    Default: "test-20210610"
+    Default: "test-20210625"
   ProdStackName:
     Type: String
-    Default: "prod-20210610"
+    Default: "prod-20210625"
   TestingPipelineExecutionRole:
     Type: String
     Default: "arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-pip-PipelineExecutionRole-1UPENALC3ILO3"

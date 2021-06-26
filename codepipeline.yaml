@@ -42,36 +42,36 @@ Parameters:
   TestingRegion:
     Type: String
     Default: "us-west-2"
-  ProdRegion:
-    Type: String
-    Default: "us-east-1"
   TestingStackName:
     Type: String
     Default: "test-20210625"
-  ProdStackName:
-    Type: String
-    Default: "prod-20210625"
   TestingPipelineExecutionRole:
     Type: String
     Default: "arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-pip-PipelineExecutionRole-1UPENALC3ILO3"
-  ProdPipelineExecutionRole:
-    Type: String
-    Default: "arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-pip-PipelineExecutionRole-1052V7X9T7W71"
   TestingCloudFormationExecutionRole:
     Type: String
     Default: "arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-CloudFormationExecutionR-LTPUFSZPT6BC"
-  ProdCloudFormationExecutionExeRole:
-    Type: String
-    Default: "arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-CloudFormationExecutionR-5I4W9KB56KB1"
   TestingArtifactBucket:
     Type: String
     Default: "aws-sam-cli-managed-test-pipeline-artifactsbucket-2tcp5h7n0fu0"
-  ProdArtifactBucket:
-    Type: String
-    Default: "aws-sam-cli-managed-prod-pipeline-artifactsbucket-9o5l9go2lprm"
   TestingImageRepository:
     Type: String
     Default: "191762412092.dkr.ecr.us-west-2.amazonaws.com/aws-sam-cli-managed-test-pipeline-resources-imagerepository-4xuroxswjutq"
+  ProdRegion:
+    Type: String
+    Default: "us-east-1"
+  ProdStackName:
+    Type: String
+    Default: "prod-20210625"
+  ProdPipelineExecutionRole:
+    Type: String
+    Default: "arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-pip-PipelineExecutionRole-1052V7X9T7W71"
+  ProdCloudFormationExecutionExeRole:
+    Type: String
+    Default: "arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-CloudFormationExecutionR-5I4W9KB56KB1"
+  ProdArtifactBucket:
+    Type: String
+    Default: "aws-sam-cli-managed-prod-pipeline-artifactsbucket-9o5l9go2lprm"
   ProdImageRepository:
     Type: String
     Default: "013714286599.dkr.ecr.us-east-1.amazonaws.com/aws-sam-cli-managed-prod-pipeline-resources-imagerepository-kmouuwmn0ecb"
@@ -89,6 +89,11 @@ Conditions:
   CreateConnection: !Equals [!Ref CodeStarConnectionArn, ""]
 
 Resources:
+  #   ____                           
+  # / ___|  ___  _   _ _ __ ___ ___ 
+  # \___ \ / _ \| | | | '__/ __/ _ \
+  #   ___) | (_) | |_| | | | (_|  __/
+  # |____/ \___/ \__,_|_|  \___\___|
   CodeStarConnection:
     Condition: CreateConnection
     Type: AWS::CodeStarConnections::Connection
@@ -96,6 +101,12 @@ Resources:
       ConnectionName: GitRepositoryConnection
       ProviderType: !Ref GitProviderType
 
+  #  ____  _            _ _            
+  # |  _ \(_)_ __   ___| (_)_ __   ___ 
+  # | |_) | | '_ \ / _ | | | '_ \ / _ \
+  # |  __/| | |_) |  __| | | | | |  __/
+  # |_|   |_| .__/ \___|_|_|_| |_|\___|
+  #         |_|                        
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
@@ -433,7 +444,8 @@ Resources:
                   - "cloudformation:ValidateTemplate"
                 Resource:
                   - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${AWS::StackName}/*"
-                
+
+  # PipelineStackCloudFormationExecutionRole is used for the pipeline to self mutate
   PipelineStackCloudFormationExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -452,7 +464,12 @@ Resources:
               - Effect: Allow
                 Action: '*'
                 Resource: '*'
-
+  
+  #   ____          _      ____        _ _     _ 
+  #  / ___|___   __| | ___| __ ) _   _(_| | __| |
+  # | |   / _ \ / _` |/ _ |  _ \| | | | | |/ _` |
+  # | |__| (_) | (_| |  __| |_) | |_| | | | (_| |
+  #  \____\___/ \__,_|\___|____/ \__,_|_|_|\__,_|
   CodeBuildServiceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -565,6 +582,7 @@ Resources:
               commands:
                 - pip install --upgrade pip
                 - pip install --upgrade awscli aws-sam-cli
+                # Enable docker https://docs.aws.amazon.com/codebuild/latest/userguide/sample-docker-custom-image.html
                 - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2 &
                 - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
             build:
@@ -621,6 +639,7 @@ Resources:
               commands:
                 - pip install --upgrade pip
                 - pip install --upgrade awscli aws-sam-cli
+                # Enable docker https://docs.aws.amazon.com/codebuild/latest/userguide/sample-docker-custom-image.html
                 - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2 &
                 - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
             build:

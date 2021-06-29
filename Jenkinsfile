@@ -1,20 +1,20 @@
 pipeline {
   agent any
   environment {
-    PIPELINE_USER_CREDENTIAL_ID = 'test'
+    PIPELINE_USER_CREDENTIAL_ID = 'aws-credentials'
     SAM_TEMPLATE = 'template.yaml'
     MAIN_BRANCH = 'main'
-    TESTING_STACK_NAME = 'test-stack'
-    TESTING_PIPELINE_EXECUTION_ROLE = 'arn:aws:iam::191762412092:role/stage-resource-stack-DeployerRole-F3UDMRJEAPVP'
-    TESTING_CLOUDFORMATION_EXECUTION_ROLE = 'arn:aws:iam::191762412092:role/stage-resource-stack-CFNDeploymentRole-1LHD5N7FSUGB6'
-    TESTING_ARTIFACTS_BUCKET = 'stage-resource-stack-artifactsbucket-1t96af9pkc631'
-    TESTING_ECR_REPO = '191762412092.dkr.ecr.us-east-2.amazonaws.com/test'
-    TESTING_REGION = 'us-east-2'
-    PROD_STACK_NAME = 'prod-stack'
-    PROD_PIPELINE_EXECUTION_ROLE = 'arn:aws:iam::013714286599:role/stack-resource-stack-DeployerRole-1MKUWNLR7G6I9'
-    PROD_CLOUDFORMATION_EXECUTION_ROLE = 'arn:aws:iam::013714286599:role/stack-resource-stack-CFNDeploymentRole-1UHQLSY8D9LY1'
-    PROD_ARTIFACTS_BUCKET = 'stack-resource-stack-artifactsbucket-1tecc3mhymec7'
-    PROD_ECR_REPO = '013714286599.dkr.ecr.us-east-2.amazonaws.com/test'
+    TESTING_STACK_NAME = 'xinhol-test'
+    TESTING_PIPELINE_EXECUTION_ROLE = 'arn:aws:iam::059506738106:role/aws-sam-cli-managed-xinhol-t-PipelineExecutionRole-1GJ9TSWM5A0QS'
+    TESTING_CLOUDFORMATION_EXECUTION_ROLE = 'arn:aws:iam::059506738106:role/aws-sam-cli-managed-xinho-CloudFormationExecutionR-1G0DVL4CLDRS7'
+    TESTING_ARTIFACTS_BUCKET = 'aws-sam-cli-managed-xinhol-test-p-artifactsbucket-1sttm07qwntnl'
+    TESTING_IMAGE_REPOSITORY = '059506738106.dkr.ecr.us-east-1.amazonaws.com/aws-sam-cli-managed-xinhol-test-pipeline-resources-imagerepository-ydqd5yjcuw2x'
+    TESTING_REGION = 'us-east-1'
+    PROD_STACK_NAME = 'xinhol-prod'
+    PROD_PIPELINE_EXECUTION_ROLE = 'arn:aws:iam::595447474365:role/aws-sam-cli-managed-xinhol-p-PipelineExecutionRole-19QVTXJZIUF1I'
+    PROD_CLOUDFORMATION_EXECUTION_ROLE = 'arn:aws:iam::595447474365:role/aws-sam-cli-managed-xinho-CloudFormationExecutionR-B9Y7JS1OLTBY'
+    PROD_ARTIFACTS_BUCKET = 'aws-sam-cli-managed-xinhol-prod-p-artifactsbucket-161ih4giynpyt'
+    PROD_IMAGE_REPOSITORY = '595447474365.dkr.ecr.us-east-2.amazonaws.com/aws-sam-cli-managed-xinhol-prod-pipeline-resources-imagerepository-bbmi4xxwagfg'
     PROD_REGION = 'us-east-2'
   }
   stages {
@@ -47,11 +47,11 @@ pipeline {
             role: env.TESTING_PIPELINE_EXECUTION_ROLE,
             roleSessionName: 'deploying-feature') {
           sh '''
-            sam deploy --stack-name $(echo $BRANCH_NAME | tr -cd '[a-zA-Z0-9-]') \
+            sam deploy --stack-name $(echo ${BRANCH_NAME} | tr -cd '[a-zA-Z0-9-]') \
               --capabilities CAPABILITY_IAM \
               --region ${TESTING_REGION} \
               --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
-              --image-repository ${TESTING_ECR_REPO} \
+              --image-repository ${TESTING_IMAGE_REPOSITORY} \
               --no-fail-on-empty-changeset \
               --role-arn ${TESTING_CLOUDFORMATION_EXECUTION_ROLE}
           '''
@@ -59,7 +59,7 @@ pipeline {
       }
     }
 
-    stage('build') {
+    stage('build-and-package') {
       when {
         branch env.MAIN_BRANCH
       }
@@ -79,7 +79,7 @@ pipeline {
           sh '''
             sam package \
               --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
-              --image-repository ${TESTING_ECR_REPO} \
+              --image-repository ${TESTING_IMAGE_REPOSITORY} \
               --region ${TESTING_REGION} \
               --output-template-file packaged-testing.yaml
           '''
@@ -93,7 +93,7 @@ pipeline {
           sh '''
             sam package \
               --s3-bucket ${PROD_ARTIFACTS_BUCKET} \
-              --image-repository ${PROD_ECR_REPO} \
+              --image-repository ${PROD_IMAGE_REPOSITORY} \
               --region ${PROD_REGION} \
               --output-template-file packaged-prod.yaml
           '''
@@ -125,7 +125,7 @@ pipeline {
               --capabilities CAPABILITY_IAM \
               --region ${TESTING_REGION} \
               --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
-              --image-repository ${TESTING_ECR_REPO} \
+              --image-repository ${TESTING_IMAGE_REPOSITORY} \
               --no-fail-on-empty-changeset \
               --role-arn ${TESTING_CLOUDFORMATION_EXECUTION_ROLE}
           '''
@@ -166,7 +166,7 @@ pipeline {
               --capabilities CAPABILITY_IAM \
               --region ${PROD_REGION} \
               --s3-bucket ${PROD_ARTIFACTS_BUCKET} \
-              --image-repository ${PROD_ECR_REPO} \
+              --image-repository ${PROD_IMAGE_REPOSITORY} \
               --no-fail-on-empty-changeset \
               --role-arn ${PROD_CLOUDFORMATION_EXECUTION_ROLE}
           '''

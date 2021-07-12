@@ -363,9 +363,9 @@ Resources:
             Effect: Allow
             Principal:
               Service: codepipeline.amazonaws.com
-            # Condition:
-            #   StringEquals:
-            #     aws:SourceAccount: !Ref AWS::AccountId
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
       Policies:
         - PolicyName: CodePipelineAccess
           PolicyDocument:

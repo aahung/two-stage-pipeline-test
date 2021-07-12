@@ -458,9 +458,9 @@ Resources:
           Effect: Allow
           Principal:
             Service: cloudformation.amazonaws.com
-          Condition:
-            StringEquals:
-              aws:SourceAccount: !Ref AWS::AccountId
+          # Condition:
+          #   StringEquals:
+          #     aws:SourceAccount: !Ref AWS::AccountId
       Policies:
         - PolicyName: GrantCloudFormationFullAccess
           PolicyDocument:

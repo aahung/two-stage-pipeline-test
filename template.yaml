@@ -10,16 +10,16 @@ Resources:
       Runtime: python3.7
       CodeUri: src
 
-  # ImageFunction:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     PackageType: Image
-  #     ImageConfig:
-  #       Command:
-  #         - main.handler
-  #   Metadata:
-  #     DockerTag: function
-  #     DockerContext: ./PythonImage
-  #     Dockerfile: Dockerfile
-  #     DockerBuildArgs:
-  #       BASE_RUNTIME: '3.8'
+  ImageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      ImageConfig:
+        Command:
+          - main.handler
+    Metadata:
+      DockerTag: function
+      DockerContext: ./PythonImage
+      Dockerfile: Dockerfile
+      DockerBuildArgs:
+        BASE_RUNTIME: '3.8'

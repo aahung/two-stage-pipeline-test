@@ -4,16 +4,16 @@ variables:
   PIPELINE_USER_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
   TESTING_STACK_NAME: sam-app
   TESTING_REGION: us-west-2
-  TESTING_PIPELINE_EXECUTION_ROLE: arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-pip-PipelineExecutionRole-1UPENALC3ILO3
-  TESTING_CLOUDFORMATION_EXECUTION_ROLE: arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-CloudFormationExecutionR-LTPUFSZPT6BC
-  TESTING_ARTIFACTS_BUCKET: aws-sam-cli-managed-test-pipeline-artifactsbucket-2tcp5h7n0fu0
-  TESTING_IMAGE_REPOSITORY: 191762412092.dkr.ecr.us-west-2.amazonaws.com/aws-sam-cli-managed-test-pipeline-resources-imagerepository-4xuroxswjutq
+  TESTING_PIPELINE_EXECUTION_ROLE: arn:aws:iam::191762412092:role/aws-sam-cli-managed-stage1-p-PipelineExecutionRole-1KNUTFS1X3Z05
+  TESTING_CLOUDFORMATION_EXECUTION_ROLE: arn:aws:iam::191762412092:role/aws-sam-cli-managed-stage-CloudFormationExecutionR-U3PR084JZPMA
+  TESTING_ARTIFACTS_BUCKET: aws-sam-cli-managed-stage1-pipeli-artifactsbucket-xiwz97am33h2
+  TESTING_IMAGE_REPOSITORY: 191762412092.dkr.ecr.us-west-2.amazonaws.com/aws-sam-cli-managed-stage1-pipeline-resources-imagerepository-mcyvqzl6ojpu
   PROD_STACK_NAME: sam-app
   PROD_REGION: us-east-1
-  PROD_PIPELINE_EXECUTION_ROLE: arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-pip-PipelineExecutionRole-1052V7X9T7W71
-  PROD_CLOUDFORMATION_EXECUTION_ROLE: arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-CloudFormationExecutionR-5I4W9KB56KB1
-  PROD_ARTIFACTS_BUCKET: aws-sam-cli-managed-prod-pipeline-artifactsbucket-9o5l9go2lprm
-  PROD_IMAGE_REPOSITORY: 013714286599.dkr.ecr.us-east-1.amazonaws.com/aws-sam-cli-managed-prod-pipeline-resources-imagerepository-kmouuwmn0ecb
+  PROD_PIPELINE_EXECUTION_ROLE: arn:aws:iam::013714286599:role/aws-sam-cli-managed-stage2-p-PipelineExecutionRole-1CR173XTEO779
+  PROD_CLOUDFORMATION_EXECUTION_ROLE: arn:aws:iam::013714286599:role/aws-sam-cli-managed-stage-CloudFormationExecutionR-SPBX3XDHXDS1
+  PROD_ARTIFACTS_BUCKET: aws-sam-cli-managed-stage2-pipeli-artifactsbucket-1vvmo2x06lf2u
+  PROD_IMAGE_REPOSITORY: 013714286599.dkr.ecr.us-east-1.amazonaws.com/aws-sam-cli-managed-stage2-pipeline-resources-imagerepository-h1ymdq95r3dc
   # By default, when using docker:dind, Docker uses the vfs storage
   # driver which copies the file system on every run.
   # This is a disk-intensive operation which can be avoided if a different driver is used.

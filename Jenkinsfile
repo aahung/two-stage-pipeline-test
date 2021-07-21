@@ -145,10 +145,9 @@ pipeline {
     //   }
     // }
 
-    // uncomment this to have a manual approval step before deployment to production
-    // stage('production-deployment-approval'){
-    //   input "Do you want to deploy to production environment?"
-    // }
+    stage('production-deployment-approval'){
+      input "Do you want to deploy to production environment?"
+    }
 
     stage('deploy-prod') {
       when {

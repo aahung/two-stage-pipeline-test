@@ -145,9 +145,6 @@ pipeline {
     //   }
     // }
 
-    stage('production-deployment-approval'){
-      input "Do you want to deploy to production environment?"
-    }
 
     stage('deploy-prod') {
       when {
@@ -159,6 +156,10 @@ pipeline {
         }
       }
       steps {
+        timeout(time: 12, unit: 'HOURS') {
+          input 'Please confirm before starting production deployment'
+        }
+
         withAWS(
             credentials: env.PIPELINE_USER_CREDENTIAL_ID, 
             region: env.PROD_REGION,

@@ -4,17 +4,17 @@ pipeline {
     PIPELINE_USER_CREDENTIAL_ID = 'aws-credentials'
     SAM_TEMPLATE = 'template.yaml'
     MAIN_BRANCH = 'main'
-    TESTING_STACK_NAME = 'test'
-    TESTING_PIPELINE_EXECUTION_ROLE = 'arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-pip-PipelineExecutionRole-1UPENALC3ILO3'
-    TESTING_CLOUDFORMATION_EXECUTION_ROLE = 'arn:aws:iam::191762412092:role/aws-sam-cli-managed-test-CloudFormationExecutionR-LTPUFSZPT6BC'
-    TESTING_ARTIFACTS_BUCKET = 'aws-sam-cli-managed-test-pipeline-artifactsbucket-2tcp5h7n0fu0'
-    TESTING_IMAGE_REPOSITORY = '191762412092.dkr.ecr.us-west-2.amazonaws.com/aws-sam-cli-managed-test-pipeline-resources-imagerepository-4xuroxswjutq'
+    TESTING_STACK_NAME = 'sam-app'
+    TESTING_PIPELINE_EXECUTION_ROLE = 'arn:aws:iam::191762412092:role/aws-sam-cli-managed-stage1-p-PipelineExecutionRole-1KNUTFS1X3Z05'
+    TESTING_CLOUDFORMATION_EXECUTION_ROLE = 'arn:aws:iam::191762412092:role/aws-sam-cli-managed-stage-CloudFormationExecutionR-U3PR084JZPMA'
+    TESTING_ARTIFACTS_BUCKET = 'aws-sam-cli-managed-stage1-pipeli-artifactsbucket-xiwz97am33h2'
+    TESTING_IMAGE_REPOSITORY = '191762412092.dkr.ecr.us-west-2.amazonaws.com/aws-sam-cli-managed-stage1-pipeline-resources-imagerepository-mcyvqzl6ojpu'
     TESTING_REGION = 'us-west-2'
-    PROD_STACK_NAME = 'prod'
-    PROD_PIPELINE_EXECUTION_ROLE = 'arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-pip-PipelineExecutionRole-1052V7X9T7W71'
-    PROD_CLOUDFORMATION_EXECUTION_ROLE = 'arn:aws:iam::013714286599:role/aws-sam-cli-managed-prod-CloudFormationExecutionR-5I4W9KB56KB1'
-    PROD_ARTIFACTS_BUCKET = 'aws-sam-cli-managed-prod-pipeline-artifactsbucket-9o5l9go2lprm'
-    PROD_IMAGE_REPOSITORY = '013714286599.dkr.ecr.us-east-1.amazonaws.com/aws-sam-cli-managed-prod-pipeline-resources-imagerepository-kmouuwmn0ecb'
+    PROD_STACK_NAME = 'sam-app'
+    PROD_PIPELINE_EXECUTION_ROLE = 'arn:aws:iam::013714286599:role/aws-sam-cli-managed-stage2-p-PipelineExecutionRole-1CR173XTEO779'
+    PROD_CLOUDFORMATION_EXECUTION_ROLE = 'arn:aws:iam::013714286599:role/aws-sam-cli-managed-stage-CloudFormationExecutionR-SPBX3XDHXDS1'
+    PROD_ARTIFACTS_BUCKET = 'aws-sam-cli-managed-stage2-pipeli-artifactsbucket-1vvmo2x06lf2u'
+    PROD_IMAGE_REPOSITORY = '013714286599.dkr.ecr.us-east-1.amazonaws.com/aws-sam-cli-managed-stage2-pipeline-resources-imagerepository-h1ymdq95r3dc'
     PROD_REGION = 'us-east-1'
   }
   stages {
@@ -144,11 +144,11 @@ pipeline {
     //     '''
     //   }
     // }
-    stage('production-deployment-approval'){
-      steps {
-        input "Do you want to deploy to production environment?"
-      }
-    }
+
+    // uncomment this to have a manual approval step before deployment to production
+    // stage('production-deployment-approval'){
+    //   input "Do you want to deploy to production environment?"
+    // }
 
     stage('deploy-prod') {
       when {
